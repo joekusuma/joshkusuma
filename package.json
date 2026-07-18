@@ -1,0 +1,17 @@
+{
+  "name": "axiom-portfolio",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "astro": "^4.16.18",
+    "three": "^0.169.0",
+    "@fontsource-variable/work-sans": "^5.1.1",
+    "@fontsource-variable/jetbrains-mono": "^5.1.2"
+  }
+}

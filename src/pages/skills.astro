@@ -1,0 +1,115 @@
+---
+import Base from '../layouts/Base.astro';
+import { projects, DISCIPLINES } from '../data/projects.js';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+const disciplineMeta = {
+  fashion:   'Garments and wearables taken to production spec — tech packs, colorways, seam-level construction, and packaging.',
+  brand:     'Identity systems and illustration — mascots, logos, packaging, campaign art, and fine-art studies.',
+  editorial: 'Layout and lettering — editorial spreads, hard grid systems, and hand-built wildstyle typography.',
+  industrial:'Objects and mechanisms — concept sketching through parametric CAD and FDM 3D printing.',
+};
+const disciplineGroups = DISCIPLINES.map((d) => ({
+  ...d,
+  desc: disciplineMeta[d.id],
+  items: projects.filter((p) => p.discipline === d.id),
+}));
+
+// tool usage
+const toolMeta = {
+  'Procreate': 'Illustration · lettering · concept art',
+  'Illustrator': 'Vector · branding · technical linework',
+  'Photoshop': 'Compositing · campaign art',
+  'InDesign': 'Editorial layout',
+  'CLO 3D': 'Garment simulation',
+  'Onshape': 'Parametric CAD',
+  'FDM printing': 'Physical prototyping',
+};
+const toolMap = {};
+for (const p of projects) for (const t of p.tools) (toolMap[t] ||= []).push(p.title);
+const tools = Object.keys(toolMap).sort((a, b) => toolMap[b].length - toolMap[a].length);
+---
+<Base current="skills" title="Skills">
+  <section class="wrap sk-top">
+    <div class="eyebrow"><span class="n">03</span> Skills & tools</div>
+    <div class="sk-head">
+      <h1>Four disciplines,<br/>one workflow.</h1>
+      <p class="lede">
+        The work moves between screen and object, but the method holds: research the reference,
+        build the system, then take it all the way to a spec someone else could produce.
+      </p>
+    </div>
+  </section>
+
+  <section class="wrap sk-disc-wrap">
+    <div class="sk-disc">
+      {disciplineGroups.map((g, i) => (
+        <div class="disc">
+          <div class="disc-head">
+            <span class="disc-n mono">{String(i + 1).padStart(2, '0')}</span>
+            <h2>{g.label}</h2>
+            <span class="disc-count mono">{g.items.length} {g.items.length === 1 ? 'project' : 'projects'}</span>
+          </div>
+          <p class="disc-desc">{g.desc}</p>
+          <ul class="disc-items">
+            {g.items.map((p) => (
+              <li><a href={`${base}/projects/${p.slug}`}><span class="di-arw" aria-hidden="true">→</span>{p.title}<span class="di-year mono">{p.year}</span></a></li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="wrap sk-tools-wrap">
+    <div class="eyebrow"><span class="n">04</span> Toolset</div>
+    <div class="sk-tools">
+      {tools.map((t) => (
+        <div class="tool">
+          <div class="tool-top">
+            <strong class="tool-name">{t}</strong>
+            <span class="tool-bar" aria-hidden="true"><i style={`width:${Math.round((toolMap[t].length / projects.length) * 100)}%`}></i></span>
+          </div>
+          <span class="tool-desc mono">{toolMeta[t] || 'Design tool'}</span>
+          <span class="tool-count mono">{toolMap[t].length}×</span>
+        </div>
+      ))}
+    </div>
+  </section>
+</Base>
+
+<style>
+  .sk-top { padding-top: 2rem; }
+  .sk-head { display: grid; grid-template-columns: 1.1fr 1fr; gap: clamp(1.5rem, 4vw, 3rem); align-items: end; }
+  .sk-head h1 { font-size: clamp(2.4rem, 6vw, 4.4rem); font-weight: 900; letter-spacing: -.03em; line-height: .95; }
+  .lede { font-size: clamp(.98rem, 1.6vw, 1.12rem); color: var(--graphite); line-height: 1.6; max-width: 50ch; }
+  @media (max-width: 720px) { .sk-head { grid-template-columns: 1fr; gap: 1.2rem; } }
+
+  .sk-disc-wrap { margin-top: clamp(2.4rem, 5vw, 4rem); }
+  .sk-disc { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .disc { border: 1.5px solid var(--line-2); padding: 1.5rem 1.6rem 1.6rem; background: var(--paper); transition: border-color .2s; }
+  .disc:hover { border-color: var(--ink); }
+  .disc-head { display: grid; grid-template-columns: auto 1fr auto; align-items: baseline; gap: .8rem; margin-bottom: .9rem; }
+  .disc-n { color: var(--blue); font-size: .78rem; font-weight: 700; }
+  .disc-head h2 { font-size: 1.35rem; font-weight: 800; letter-spacing: -.015em; }
+  .disc-count { font-size: .62rem; color: var(--faint); white-space: nowrap; }
+  .disc-desc { font-size: .9rem; line-height: 1.6; color: var(--ink-soft); margin: 0 0 1.2rem; padding-bottom: 1.1rem; border-bottom: 1px solid var(--line); }
+  .disc-items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  .disc-items a { display: grid; grid-template-columns: 1.2rem 1fr auto; align-items: center; gap: .5rem; padding: .55rem 0; font-size: .96rem; font-weight: 600; border-bottom: 1px solid var(--line); transition: color .18s, padding-left .18s; }
+  .disc-items li:last-child a { border-bottom: 0; }
+  .disc-items a:hover { color: var(--blue); padding-left: .3rem; }
+  .di-arw { color: var(--blue); font-family: var(--font-mono); font-size: .8rem; }
+  .di-year { font-family: var(--font-mono); font-size: .66rem; color: var(--faint); font-weight: 500; }
+
+  .sk-tools-wrap { margin-top: clamp(2.8rem, 6vw, 4.5rem); }
+  .sk-tools { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+  .tool { position: relative; border: 1.5px solid var(--line-2); padding: 1.1rem 1.2rem 1.2rem; background: var(--paper); }
+  .tool-top { display: flex; flex-direction: column; gap: .5rem; margin-bottom: .6rem; }
+  .tool-name { font-size: 1.08rem; font-weight: 800; letter-spacing: -.01em; }
+  .tool-bar { display: block; height: 3px; background: var(--line); }
+  .tool-bar i { display: block; height: 100%; background: var(--blue); }
+  .tool-desc { font-size: .64rem; color: var(--graphite); letter-spacing: .04em; text-transform: uppercase; }
+  .tool-count { position: absolute; top: 1.1rem; right: 1.2rem; font-size: .7rem; color: var(--faint); }
+
+  @media (max-width: 720px) { .sk-disc { grid-template-columns: 1fr; } }
+</style>

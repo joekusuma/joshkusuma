@@ -1,0 +1,117 @@
+---
+import { Image } from 'astro:assets';
+const { slides } = Astro.props; // [{ img, title, discipline, blurb, href, index }]
+---
+<figure class="shuffle" data-shuffle>
+  <div class="stage">
+    <span class="corner tl" aria-hidden="true"></span>
+    <span class="corner br" aria-hidden="true"></span>
+    <span class="stage-tag mono" aria-hidden="true">PREVIEW · AUTO</span>
+    {slides.map((s, i) => (
+      <a
+        class={`slide${i === 0 ? ' on' : ''}`}
+        href={s.href}
+        data-i={i}
+        data-title={s.title}
+        data-discipline={s.discipline}
+        data-blurb={s.blurb}
+        data-index={s.index}
+        aria-hidden={i === 0 ? 'false' : 'true'}
+        tabindex={i === 0 ? 0 : -1}
+      >
+        <Image src={s.img} alt={s.title} widths={[420, 760]} sizes="(max-width:860px) 92vw, 44vw" />
+      </a>
+    ))}
+  </div>
+
+  <figcaption class="cap">
+    <div class="cap-row">
+      <span class="cap-idx mono" data-cap-index>{slides[0].index}</span>
+      <div class="cap-txt">
+        <span class="cap-disc label-blue" data-cap-disc>{slides[0].discipline}</span>
+        <strong class="cap-title" data-cap-title>{slides[0].title}</strong>
+        <span class="cap-blurb" data-cap-blurb>{slides[0].blurb}</span>
+      </div>
+    </div>
+    <div class="dots" role="tablist" aria-label="Preview slides">
+      {slides.map((_, i) => (
+        <button class={`dot${i === 0 ? ' on' : ''}`} data-dot={i} aria-label={`Show preview ${i + 1}`}></button>
+      ))}
+    </div>
+  </figcaption>
+</figure>
+
+<style>
+  .shuffle { margin: 0; }
+  .stage {
+    position: relative; width: 100%; aspect-ratio: 4 / 3;
+    background: var(--paper-2);
+    border: 1.5px solid var(--ink);
+    overflow: hidden;
+  }
+  .stage-tag { position: absolute; top: 8px; left: 10px; z-index: 4; font-size: .55rem; color: var(--graphite); background: color-mix(in srgb, var(--paper-2) 80%, transparent); padding: 2px 5px; }
+  .corner { position: absolute; width: 12px; height: 12px; z-index: 4; }
+  .corner.tl { top: 6px; right: 8px; border-top: 1.5px solid var(--red); border-right: 1.5px solid var(--red); }
+  .corner.br { bottom: 6px; left: 8px; border-bottom: 1.5px solid var(--red); border-left: 1.5px solid var(--red); }
+
+  .slide {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    opacity: 0; transition: opacity .6s var(--ease); pointer-events: none;
+  }
+  .slide.on { opacity: 1; pointer-events: auto; }
+  .slide img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+
+  .cap { padding-top: .9rem; }
+  .cap-row { display: flex; gap: .9rem; align-items: baseline; min-height: 3.4rem; }
+  .cap-idx { font-size: .9rem; color: var(--blue); font-weight: 700; }
+  .cap-txt { display: flex; flex-direction: column; gap: .2rem; }
+  .cap-disc { font-size: .64rem; }
+  .cap-title { font-size: 1.12rem; font-weight: 800; letter-spacing: -.01em; line-height: 1.1; }
+  .cap-blurb { font-size: .82rem; color: var(--graphite); line-height: 1.45; max-width: 46ch; }
+
+  .dots { display: flex; gap: 7px; margin-top: .8rem; }
+  .dot { width: 22px; height: 3px; background: var(--line-2); border: 0; padding: 0; transition: background .2s; }
+  .dot.on { background: var(--ink); }
+  .dot:hover { background: var(--blue); }
+</style>
+
+<script>
+  function initShuffle(root: HTMLElement) {
+    const slides = Array.from(root.querySelectorAll<HTMLElement>('.slide'));
+    const dots = Array.from(root.querySelectorAll<HTMLButtonElement>('.dot'));
+    const capIndex = root.querySelector<HTMLElement>('[data-cap-index]');
+    const capDisc = root.querySelector<HTMLElement>('[data-cap-disc]');
+    const capTitle = root.querySelector<HTMLElement>('[data-cap-title]');
+    const capBlurb = root.querySelector<HTMLElement>('[data-cap-blurb]');
+    let i = 0;
+    let timer: number | undefined;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function show(n: number) {
+      i = (n + slides.length) % slides.length;
+      slides.forEach((s, k) => {
+        const on = k === i;
+        s.classList.toggle('on', on);
+        s.setAttribute('aria-hidden', on ? 'false' : 'true');
+        s.tabIndex = on ? 0 : -1;
+      });
+      dots.forEach((d, k) => d.classList.toggle('on', k === i));
+      const el = slides[i];
+      if (capIndex) capIndex.textContent = el.dataset.index || '';
+      if (capDisc) capDisc.textContent = el.dataset.discipline || '';
+      if (capTitle) capTitle.textContent = el.dataset.title || '';
+      if (capBlurb) capBlurb.textContent = el.dataset.blurb || '';
+    }
+    function next() { show(i + 1); }
+    function start() { if (!reduce) { stop(); timer = window.setInterval(next, 3600); } }
+    function stop() { if (timer) window.clearInterval(timer); }
+
+    dots.forEach((d) => d.addEventListener('click', () => { show(Number(d.dataset.dot)); start(); }));
+    root.addEventListener('mouseenter', stop);
+    root.addEventListener('mouseleave', start);
+    root.addEventListener('focusin', stop);
+    root.addEventListener('focusout', start);
+    start();
+  }
+  document.querySelectorAll<HTMLElement>('[data-shuffle]').forEach(initShuffle);
+</script>

@@ -1,0 +1,113 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../../layouts/Base.astro';
+import { projects, DISCIPLINES, pic } from '../../data/projects.js';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+<Base current="projects" title="Projects & Files">
+  <section class="wrap page-head">
+    <div class="eyebrow"><span class="n">01</span> Projects & files</div>
+    <div class="head-grid">
+      <h1>Ten projects,<br/>one dossier.</h1>
+      <p class="lede">
+        Work across fashion, brand identity, editorial, industrial design and 3D printing.
+        Every entry is a full sheet — brief, specs, and source files. Filter by discipline, or open a project to read the detail.
+      </p>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <div class="filter" role="tablist" aria-label="Filter by discipline">
+      <button class="fbtn on" data-filter="all">All <span class="fcount mono">{projects.length}</span></button>
+      {DISCIPLINES.map((d) => (
+        <button class="fbtn" data-filter={d.id}>{d.label} <span class="fcount mono">{projects.filter((p) => p.discipline === d.id).length}</span></button>
+      ))}
+    </div>
+
+    <div class="cards" data-cards>
+      {projects.map((p) => (
+        <a class="card" href={`${base}/projects/${p.slug}`} data-discipline={p.discipline}>
+          <div class={`card-thumb fit-${p.heroFit}`}>
+            <Image src={pic(p.hero)} alt={p.title} widths={[360, 720]} sizes="(max-width:720px) 92vw, 32vw" />
+            {p.is3d && <span class="card-flag mono">3D · STL</span>}
+            <span class="card-idx mono">{p.index}</span>
+          </div>
+          <div class="card-body">
+            <div class="card-top">
+              <span class="card-disc label-blue">{p.disciplineLabel}</span>
+              <span class="card-year mono">{p.year}</span>
+            </div>
+            <h2 class="card-title">{p.title}</h2>
+            <p class="card-blurb">{p.blurb}</p>
+            <div class="card-foot">
+              <span class="card-tools mono">{p.tools.join(' · ')}</span>
+              <span class="card-arw" aria-hidden="true">→</span>
+            </div>
+          </div>
+        </a>
+      ))}
+    </div>
+    <p class="noresult mono" data-noresult hidden>No projects in this discipline.</p>
+  </section>
+</Base>
+
+<style>
+  .page-head { padding-top: 2rem; }
+  .head-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: clamp(1.5rem, 4vw, 3rem); align-items: end; }
+  .head-grid h1 { font-size: clamp(2.4rem, 6vw, 4.4rem); font-weight: 900; letter-spacing: -.03em; line-height: .95; }
+  .lede { font-size: clamp(.98rem, 1.6vw, 1.12rem); color: var(--graphite); line-height: 1.6; max-width: 52ch; }
+  @media (max-width: 720px) { .head-grid { grid-template-columns: 1fr; gap: 1.2rem; } }
+
+  .filter { display: flex; flex-wrap: wrap; gap: 8px; margin: clamp(1.8rem, 4vw, 2.6rem) 0 1.6rem; padding-bottom: 1.4rem; border-bottom: 1px solid var(--line-2); }
+  .fbtn {
+    font-family: var(--font-mono); font-size: .74rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
+    padding: .55rem .85rem; border: 1.5px solid var(--line-2); background: var(--paper); color: var(--graphite);
+    display: inline-flex; align-items: center; gap: .5rem; transition: border-color .2s, color .2s, background .2s;
+  }
+  .fbtn:hover { border-color: var(--ink); color: var(--ink); }
+  .fbtn.on { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+  .fcount { font-size: .64rem; opacity: .7; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+  .card { display: flex; flex-direction: column; border: 1.5px solid var(--line-2); background: var(--paper); transition: border-color .22s var(--ease), transform .22s var(--ease); }
+  .card:hover { border-color: var(--blue); transform: translateY(-3px); }
+
+  .card-thumb { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: var(--paper-2); border-bottom: 1.5px solid var(--line-2); }
+  .card:hover .card-thumb { border-color: var(--blue); }
+  .card-thumb img { width: 100%; height: 100%; }
+  .fit-cover img { object-fit: cover; }
+  .fit-contain img { object-fit: contain; padding: 9%; }
+  .card-flag { position: absolute; top: 8px; left: 8px; font-size: .55rem; color: var(--paper); background: var(--red); padding: 2px 6px; letter-spacing: .08em; }
+  .card-idx { position: absolute; bottom: 8px; right: 10px; font-size: .78rem; font-weight: 700; color: var(--ink); background: color-mix(in srgb, var(--paper) 74%, transparent); padding: 1px 5px; }
+
+  .card-body { padding: 1rem 1.05rem 1.1rem; display: flex; flex-direction: column; flex: 1; }
+  .card-top { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin-bottom: .5rem; }
+  .card-disc { font-size: .6rem; }
+  .card-year { font-size: .7rem; color: var(--faint); }
+  .card-title { font-size: 1.28rem; font-weight: 800; letter-spacing: -.015em; line-height: 1.05; margin-bottom: .45rem; }
+  .card-blurb { font-size: .84rem; color: var(--graphite); line-height: 1.5; margin: 0 0 1rem; flex: 1; }
+  .card-foot { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding-top: .7rem; border-top: 1px solid var(--line); }
+  .card-tools { font-size: .62rem; color: var(--faint); letter-spacing: .04em; }
+  .card-arw { color: var(--ink); transition: transform .2s var(--ease); }
+  .card:hover .card-arw { transform: translateX(4px); color: var(--blue); }
+
+  .noresult { text-align: center; color: var(--graphite); padding: 3rem 0; font-size: .8rem; }
+</style>
+
+<script>
+  const btns = Array.from(document.querySelectorAll<HTMLButtonElement>('.fbtn'));
+  const cards = Array.from(document.querySelectorAll<HTMLElement>('.card'));
+  const noResult = document.querySelector<HTMLElement>('[data-noresult]');
+  btns.forEach((b) => b.addEventListener('click', () => {
+    btns.forEach((x) => x.classList.remove('on'));
+    b.classList.add('on');
+    const f = b.dataset.filter;
+    let shown = 0;
+    cards.forEach((c) => {
+      const match = f === 'all' || c.dataset.discipline === f;
+      c.style.display = match ? '' : 'none';
+      if (match) shown++;
+    });
+    if (noResult) noResult.hidden = shown > 0;
+  }));
+</script>

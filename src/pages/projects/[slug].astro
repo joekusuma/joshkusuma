@@ -1,0 +1,178 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../../layouts/Base.astro';
+import StlViewer from '../../components/StlViewer.astro';
+import { projects, pic, pics } from '../../data/projects.js';
+
+export function getStaticPaths() {
+  return projects.map((p, i) => ({
+    params: { slug: p.slug },
+    props: {
+      project: p,
+      prev: projects[(i - 1 + projects.length) % projects.length],
+      next: projects[(i + 1) % projects.length],
+    },
+  }));
+}
+
+const { project: p, prev, next } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const galleryKeys = p.is3d ? (p.partsGallery || []) : (p.gallery || []).filter((k) => k !== p.hero);
+const gallery = pics(...galleryKeys);
+const heroImg = pic(p.hero);
+---
+<Base current="projects" title={p.title} description={p.blurb}>
+  <article class="detail">
+    <!-- breadcrumb -->
+    <div class="wrap dt-crumb">
+      <a href={`${base}/projects`} class="mono crumb-link">← ALL PROJECTS</a>
+      <span class="mono crumb-idx">{p.index} / {String(projects.length).padStart(2, '0')}</span>
+    </div>
+
+    <!-- title block -->
+    <header class="wrap dt-head">
+      <span class="dt-disc label-blue">{p.disciplineLabel}</span>
+      <h1>{p.title}</h1>
+      <p class="dt-tag">{p.tagline}</p>
+      <div class="dt-meta">
+        <span><i class="mono">YEAR</i> {p.year}</span>
+        <span><i class="mono">TYPE</i> {p.kind}</span>
+        <span><i class="mono">TOOLS</i> {p.tools.join(', ')}</span>
+      </div>
+    </header>
+
+    <!-- hero visual OR 3D viewer -->
+    <div class="wrap dt-hero-wrap">
+      {p.is3d ? (
+        <StlViewer models={p.models} poster={p.hero} label={p.title} />
+      ) : (
+        <figure class={`dt-hero ${p.heroFit}`}>
+          <Image src={heroImg} alt={p.title} widths={[600, 1000, 1400]} sizes="(max-width:860px) 94vw, 78vw" />
+          <span class="dt-hero-tag mono">FIG.01 — {p.title.toUpperCase()}</span>
+        </figure>
+      )}
+    </div>
+
+    <!-- body: summary + spec sheet -->
+    <div class="wrap dt-body">
+      <div class="dt-summary">
+        <div class="eyebrow"><span class="n">A</span> The brief</div>
+        {p.summary.map((para) => <p set:html={para} />)}
+
+        {p.is3d && (
+          <a class="btn dt-dl" href={`${base}/downloads/${p.download}`} download>
+            ↓ Download source files (.zip)
+          </a>
+        )}
+      </div>
+
+      <aside class="dt-specs">
+        <div class="spec-card">
+          <div class="spec-head mono">SPECIFICATION</div>
+          <dl class="spec-list">
+            <div class="spec-row"><dt>Discipline</dt><dd>{p.disciplineLabel}</dd></div>
+            <div class="spec-row"><dt>Year</dt><dd>{p.year}</dd></div>
+            {p.specs.map(([k, v]) => (
+              <div class="spec-row"><dt>{k}</dt><dd set:html={v} /></div>
+            ))}
+            <div class="spec-row"><dt>Tools</dt><dd>{p.tools.join(', ')}</dd></div>
+          </dl>
+          <div class="spec-foot mono">REF · {p.slug.toUpperCase()}</div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- gallery / parts -->
+    {gallery.length > 0 && (
+      <section class="wrap dt-gallery-wrap">
+        <div class="eyebrow"><span class="n">B</span> {p.is3d ? 'Selected parts' : 'Plates'}</div>
+        <div class={`dt-gallery${p.is3d ? ' parts' : ''}`}>
+          {gallery.map((g, i) => (
+            <figure class="plate">
+              <Image src={g} alt={`${p.title} — plate ${i + 2}`} widths={[400, 800]} sizes="(max-width:720px) 92vw, 46vw" />
+              <figcaption class="mono">{String(i + 2).padStart(2, '0')}</figcaption>
+            </figure>
+          ))}
+        </div>
+        {p.is3d && <p class="parts-note mono">Showing {gallery.length} of {p.specs.find((s) => s[0] === 'Parts')?.[1] || 'many'} — full set in the download.</p>}
+      </section>
+    )}
+
+    <!-- prev / next -->
+    <nav class="wrap dt-nav" aria-label="Project navigation">
+      <a href={`${base}/projects/${prev.slug}`} class="dt-nav-item prev">
+        <span class="mono">← PREV</span>
+        <strong>{prev.title}</strong>
+      </a>
+      <a href={`${base}/projects/${next.slug}`} class="dt-nav-item next">
+        <span class="mono">NEXT →</span>
+        <strong>{next.title}</strong>
+      </a>
+    </nav>
+  </article>
+</Base>
+
+<style>
+  .detail { padding-top: 1.6rem; }
+  .dt-crumb { display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; }
+  .crumb-link { font-size: .72rem; color: var(--graphite); letter-spacing: .08em; transition: color .2s; }
+  .crumb-link:hover { color: var(--blue); }
+  .crumb-idx { font-size: .72rem; color: var(--faint); }
+
+  .dt-head { padding: 1rem 0 1.8rem; border-top: 1.5px solid var(--ink); }
+  .dt-disc { display: block; margin-bottom: .9rem; }
+  .dt-head h1 { font-size: clamp(2.4rem, 6.5vw, 5rem); font-weight: 900; letter-spacing: -.035em; line-height: .94; }
+  .dt-tag { font-size: clamp(1.05rem, 2.2vw, 1.4rem); font-weight: 300; font-style: italic; color: var(--ink-soft); margin: .8rem 0 1.4rem; }
+  .dt-meta { display: flex; flex-wrap: wrap; gap: 1.6rem; font-size: .86rem; color: var(--ink-soft); }
+  .dt-meta i { display: block; font-size: .58rem; color: var(--faint); font-style: normal; letter-spacing: .12em; margin-bottom: 2px; }
+
+  .dt-hero-wrap { margin: .4rem 0 2.4rem; }
+  .dt-hero { position: relative; margin: 0; border: 1.5px solid var(--ink); background: radial-gradient(120% 120% at 50% 15%, #fff, var(--paper-2)); overflow: hidden; }
+  .dt-hero.cover { aspect-ratio: 16 / 10; }
+  .dt-hero.cover img { width: 100%; height: 100%; object-fit: cover; }
+  .dt-hero.contain { display: grid; place-items: center; padding: clamp(1rem, 3vw, 2.4rem); }
+  .dt-hero.contain img { max-height: 66vh; width: auto; max-width: 100%; object-fit: contain; }
+  .dt-hero-tag { position: absolute; bottom: 10px; left: 12px; font-size: .58rem; color: var(--graphite); background: color-mix(in srgb, var(--paper) 72%, transparent); padding: 2px 7px; }
+
+  .dt-body { display: grid; grid-template-columns: 1.55fr 1fr; gap: clamp(1.6rem, 4vw, 3.4rem); align-items: start; margin-bottom: 3rem; }
+  .dt-summary p { font-size: clamp(1rem, 1.5vw, 1.12rem); line-height: 1.72; color: var(--ink-soft); margin: 0 0 1.1rem; }
+  .dt-dl { margin-top: 1rem; }
+
+  .dt-specs { position: sticky; top: 22px; }
+  .spec-card { border: 1.5px solid var(--ink); }
+  .spec-head { font-size: .66rem; letter-spacing: .18em; padding: .7rem .9rem; border-bottom: 1.5px solid var(--ink); background: var(--ink); color: var(--paper); }
+  .spec-list { margin: 0; padding: 0; }
+  .spec-row { display: grid; grid-template-columns: 40% 60%; gap: .5rem; padding: .7rem .9rem; border-bottom: 1px solid var(--line); }
+  .spec-row:last-child { border-bottom: 0; }
+  .spec-row dt { font-family: var(--font-mono); font-size: .66rem; text-transform: uppercase; letter-spacing: .06em; color: var(--graphite); }
+  .spec-row dd { margin: 0; font-size: .82rem; color: var(--ink); font-weight: 500; }
+  .spec-foot { font-size: .58rem; color: var(--faint); padding: .6rem .9rem; border-top: 1.5px solid var(--ink); text-align: right; }
+
+  .dt-gallery-wrap { margin-bottom: 3rem; }
+  .dt-gallery { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .dt-gallery.parts { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+  .plate { position: relative; margin: 0; border: 1.5px solid var(--line-2); background: var(--paper-2); overflow: hidden; }
+  .dt-gallery:not(.parts) .plate { aspect-ratio: 4 / 3; }
+  .dt-gallery.parts .plate { aspect-ratio: 1 / 1; }
+  .plate img { width: 100%; height: 100%; object-fit: contain; padding: 6%; }
+  .dt-gallery:not(.parts) .plate img { object-fit: cover; padding: 0; }
+  .plate figcaption { position: absolute; top: 6px; left: 8px; font-size: .56rem; color: var(--graphite); background: color-mix(in srgb, var(--paper) 70%, transparent); padding: 1px 5px; }
+  .parts-note { margin-top: 1rem; font-size: .66rem; color: var(--faint); }
+
+  .dt-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; border-top: 1.5px solid var(--ink); padding-top: 1.6rem; }
+  .dt-nav-item { display: flex; flex-direction: column; gap: .35rem; padding: 1.1rem; border: 1.5px solid var(--line-2); transition: border-color .2s, background .2s; }
+  .dt-nav-item:hover { border-color: var(--blue); background: var(--paper-2); }
+  .dt-nav-item span { font-size: .66rem; color: var(--graphite); letter-spacing: .08em; }
+  .dt-nav-item strong { font-size: 1.1rem; font-weight: 800; letter-spacing: -.01em; }
+  .dt-nav-item.next { text-align: right; align-items: flex-end; }
+
+  @media (max-width: 860px) {
+    .dt-body { grid-template-columns: 1fr; gap: 1.8rem; }
+    .dt-specs { position: static; }
+  }
+  @media (max-width: 620px) {
+    .dt-gallery { grid-template-columns: 1fr; }
+    .dt-nav { grid-template-columns: 1fr; }
+    .dt-nav-item.next { text-align: left; align-items: flex-start; }
+  }
+</style>

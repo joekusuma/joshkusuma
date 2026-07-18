@@ -1,0 +1,95 @@
+---
+import '@fontsource-variable/work-sans';
+import '@fontsource-variable/jetbrains-mono';
+import '../styles/global.css';
+import Nav from '../components/Nav.astro';
+
+const { title, description = 'Josh Bennett Kusuma — design portfolio. Fashion, brand, editorial, industrial and 3D work.', current = '' } = Astro.props;
+const full = title ? `${title} · Josh Bennett Kusuma` : 'Josh Bennett Kusuma · Design Journey';
+const year = new Date().getFullYear();
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{full}</title>
+    <meta name="description" content={description} />
+    <meta name="author" content="Josh Bennett Kusuma" />
+    <meta property="og:title" content={full} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta name="theme-color" content="#FBFBF9" />
+    <link rel="icon" href={`data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23FBFBF9'/><path d='M6 24 L16 6 L26 24' fill='none' stroke='%2314161D' stroke-width='3'/></svg>`} />
+  </head>
+  <body>
+    <a href="#main" class="skip">Skip to content</a>
+
+    <!-- drafting chrome -->
+    <span class="regmark" style="top:12px;left:88px" aria-hidden="true"></span>
+    <span class="regmark" style="top:12px;right:12px" aria-hidden="true"></span>
+    <span class="regmark" style="bottom:12px;right:12px" aria-hidden="true"></span>
+    <div class="edge-ruler" aria-hidden="true">
+      <span>00</span><span>10</span><span>20</span><span>30</span><span>40</span><span>50</span><span>60</span>
+    </div>
+
+    <Nav current={current} />
+
+    <div class="shell">
+      <main id="main">
+        <slot />
+      </main>
+
+      <footer class="foot">
+        <div class="wrap foot-in">
+          <div class="foot-brand">
+            <span class="foot-mark">◺ AXIOM</span>
+            <p class="mono">Josh Bennett Kusuma — designer, JC1 · SIS Semarang.<br/>Curating the world’s aesthetics for the local scene.</p>
+          </div>
+          <nav class="foot-nav" aria-label="Footer">
+            <a href={`${base}/about`}>About</a>
+            <a href={`${base}/projects`}>Projects</a>
+            <a href={`${base}/skills`}>Skills</a>
+            <a href={`${base}/contact`}>Contact</a>
+          </nav>
+          <div class="foot-meta tick">
+            <span>DOC · PORTFOLIO / {year}</span>
+            <span>REV · 1.0</span>
+            <span>SHEET · 1 / 1</span>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <style>
+      main { padding-left: 76px; padding-bottom: 0; min-height: 60vh; }
+      @media (max-width: 860px) { main { padding-left: 0; padding-bottom: 60px; } }
+
+      .edge-ruler {
+        position: fixed; right: 0; top: 0; height: 100vh; width: 20px; z-index: 3;
+        display: flex; flex-direction: column; justify-content: space-between;
+        padding: 60px 0; pointer-events: none;
+      }
+      .edge-ruler span {
+        font-family: var(--font-mono); font-size: .5rem; color: var(--faint);
+        writing-mode: vertical-rl; letter-spacing: .1em;
+      }
+      @media (max-width: 860px) { .edge-ruler { display: none; } }
+
+      .foot { border-top: 1.5px solid var(--ink); margin-top: 5rem; padding: 2.6rem 0 3rem; }
+      @media (max-width: 860px) { .foot { padding-bottom: 4.6rem; } }
+      .foot-in { display: grid; grid-template-columns: 1.6fr 1fr 1fr; gap: 2rem; align-items: start; }
+      .foot-mark { font-weight: 800; letter-spacing: .04em; font-size: 1.05rem; }
+      .foot-brand p { color: var(--graphite); font-size: .78rem; margin: .7rem 0 0; line-height: 1.7; }
+      .foot-nav { display: flex; flex-direction: column; gap: .5rem; font-family: var(--font-mono); font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; }
+      .foot-nav a { color: var(--ink); width: fit-content; border-bottom: 1px solid transparent; transition: border-color .2s; }
+      .foot-nav a:hover { border-color: var(--blue); color: var(--blue); }
+      .foot-meta { display: flex; flex-direction: column; gap: .45rem; text-align: right; }
+      @media (max-width: 720px) {
+        .foot-in { grid-template-columns: 1fr; gap: 1.6rem; }
+        .foot-meta { text-align: left; }
+      }
+    </style>
+  </body>
+</html>

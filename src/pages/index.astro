@@ -1,0 +1,202 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import ShuffleCanvas from '../components/ShuffleCanvas.astro';
+import { projects, featured, pic } from '../data/projects.js';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+const slides = featured.map((p) => ({
+  img: pic(p.hero),
+  title: p.title,
+  discipline: p.disciplineLabel,
+  blurb: p.blurb,
+  href: `${base}/projects/${p.slug}`,
+  index: p.index,
+}));
+
+// canvas-spanning gallery tiles (varied sizes)
+const tiles = [
+  { area: 'rui',  slug: 'rui-clothing',  img: 'rui-black',                 fit: 'cover',   label: 'RŪI' },
+  { area: 'tok',  slug: 'tokyo-shibuya', img: 'tokyo-shibuya',             fit: 'cover',   label: 'Shibuya' },
+  { area: 'mat',  slug: 'matchaholic',   img: 'matcha-mascot',             fit: 'cover',   label: 'Matchaholic' },
+  { area: 'wild', slug: 'wildstyle',     img: 'wildstyle-axiom-grey',      fit: 'cover',   label: 'AXIOM' },
+  { area: 'tent', slug: 'tentacle-arm',  img: 'stl-tentacle-hero',         fit: 'contain', label: 'Tentacle' },
+  { area: 'man',  slug: 'mandala-integrity', img: 'mandala',              fit: 'contain', label: 'Mandala' },
+];
+---
+<Base current="" title="Design Journey">
+  <!-- ============ HERO / WIREFRAME ============ -->
+  <section class="hero-wrap">
+    <div class="wrap">
+      <div class="topbar">
+        <span class="tick">J.B. KUSUMA · DESIGN DOSSIER</span>
+        <span class="tick">SEMARANG · ID</span>
+        <span class="tick">FILE 00 — INTRO</span>
+      </div>
+
+      <div class="hero">
+        <!-- LEFT: masthead + poem + preview -->
+        <div class="col-left">
+          <header class="masthead">
+            <h1>My Design<br/>Journey</h1>
+            <p class="byline">— by Josh Bennett Kusuma</p>
+          </header>
+
+          <div class="poem" data-poem>
+            <span class="poem-fraction mono" aria-hidden="true">¾</span>
+            <p class="poem-lead">
+              <span class="curio">Curiosity…</span>
+              <span class="curio-q">what exactly is curiosity?</span>
+            </p>
+            <p class="poem-body">
+              Is it a desire to question how objects interact?<br/>
+              Is it just a way to view the world, or a reality?<br/>
+              Or, a feeling of wonder that drives us to reflect?
+            </p>
+            <p class="poem-body">
+              Or, is it an unimaginable powerful force,<br/>
+              dragging us mercilessly towards the unknown?<br/>
+              Perhaps it is the connection between a spark grown,<br/>
+              and a bold choice.
+            </p>
+            <span class="poem-unit mono" aria-hidden="true">1 : 1</span>
+          </div>
+
+          <div class="preview-block">
+            <span class="preview-lead label-blue"><span class="lead-dash"></span>Sneak preview — shuffles on its own</span>
+            <ShuffleCanvas slides={slides} />
+          </div>
+        </div>
+
+        <!-- divider = the half border boxes must not cross -->
+        <div class="divider" aria-hidden="true"><span class="div-tag mono">½</span></div>
+
+        <!-- RIGHT: canvas-spanning gallery -->
+        <div class="col-right">
+          <div class="gal-head">
+            <span class="label-blue"><span class="lead-dash"></span>Selected work — canvas spanning</span>
+            <span class="tick">{projects.length} PROJECTS</span>
+          </div>
+          <div class="gallery">
+            {tiles.map((t) => (
+              <a class={`gtile a-${t.area} fit-${t.fit}`} href={`${base}/projects/${t.slug}`} aria-label={t.label}>
+                <Image src={pic(t.img)} alt={t.label} widths={[300, 600]} sizes="(max-width:860px) 45vw, 22vw" />
+                <span class="gtile-tag mono">{t.label}</span>
+                <span class="gtile-plus" aria-hidden="true">↗</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PROJECT INDEX (dossier table) ============ -->
+  <section class="wrap idx-wrap">
+    <div class="eyebrow"><span class="n">02</span> Index of work</div>
+    <ol class="idx">
+      {projects.map((p) => (
+        <li>
+          <a class="idx-row" href={`${base}/projects/${p.slug}`}>
+            <span class="idx-n mono">{p.index}</span>
+            <span class="idx-title">{p.title}</span>
+            <span class="idx-disc mono">{p.disciplineLabel}</span>
+            <span class="idx-year mono">{p.year}</span>
+            <span class="idx-arw" aria-hidden="true">→</span>
+          </a>
+        </li>
+      ))}
+    </ol>
+    <a class="btn ghost idx-cta" href={`${base}/projects`}>Open the full projects sheet <span class="arw">→</span></a>
+  </section>
+</Base>
+
+<style>
+  .hero-wrap { padding-top: 1.4rem; }
+  .topbar { display: flex; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--line-2); padding-bottom: .6rem; margin-bottom: clamp(1.4rem, 3vw, 2.4rem); flex-wrap: wrap; }
+
+  .hero { display: grid; grid-template-columns: minmax(0,1fr) 0 minmax(0,1.04fr); gap: clamp(1.4rem, 3.6vw, 3.2rem); align-items: start; }
+
+  /* masthead */
+  .masthead h1 { font-size: clamp(2.9rem, 7.4vw, 6rem); font-weight: 900; letter-spacing: -.035em; line-height: .92; }
+  .byline { font-weight: 200; font-style: italic; font-size: clamp(1rem, 2.2vw, 1.35rem); color: var(--ink-soft); margin: .7rem 0 0; letter-spacing: .01em; }
+
+  /* poem */
+  .poem { position: relative; margin: clamp(1.6rem, 3.4vw, 2.6rem) 0; padding: 1.5rem 1.6rem 1.7rem; border: 1.5px dashed var(--red); }
+  .poem-fraction { position: absolute; top: -.7rem; left: 1.2rem; background: var(--paper); padding: 0 .4rem; color: var(--blue); font-size: .8rem; }
+  .poem-unit { position: absolute; bottom: -.7rem; right: 1.2rem; background: var(--paper); padding: 0 .4rem; color: var(--blue); font-size: .72rem; }
+  .poem-lead { margin: 0 0 .8rem; line-height: 1; }
+  .curio { display: block; font-size: clamp(2.3rem, 5.6vw, 3.6rem); font-weight: 200; letter-spacing: -.02em; line-height: 1; }
+  .curio-q { display: block; font-weight: 300; font-size: clamp(.92rem, 1.6vw, 1.02rem); color: var(--graphite); margin-top: .5rem; font-style: italic; }
+  .poem-body { font-weight: 300; font-size: clamp(.9rem, 1.5vw, 1rem); line-height: 1.7; color: var(--ink-soft); margin: 0 0 1rem; }
+  .poem-body:last-of-type { margin-bottom: 0; }
+
+  .preview-lead, .gal-head .label-blue { display: inline-flex; align-items: center; gap: .6rem; margin-bottom: .9rem; }
+  .lead-dash { width: 20px; height: 1.5px; background: var(--blue); display: inline-block; }
+
+  /* divider */
+  .divider { position: relative; width: 1.5px; background: repeating-linear-gradient(to bottom, var(--line-3) 0 8px, transparent 8px 14px); justify-self: center; align-self: stretch; }
+  .div-tag { position: absolute; top: 40%; left: 50%; transform: translate(-50%,-50%); background: var(--paper); color: var(--red); padding: 3px 2px; font-size: .68rem; writing-mode: vertical-rl; }
+
+  /* right column */
+  .col-right { position: sticky; top: 22px; }
+  .gal-head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: 1fr;
+    grid-template-areas:
+      "rui  rui  tok"
+      "rui  rui  tok"
+      "mat  wild tok"
+      "tent wild man";
+    gap: 8px;
+    aspect-ratio: 3 / 4;
+  }
+  .a-rui { grid-area: rui; } .a-tok { grid-area: tok; } .a-mat { grid-area: mat; }
+  .a-wild { grid-area: wild; } .a-tent { grid-area: tent; } .a-man { grid-area: man; }
+
+  .gtile { position: relative; overflow: hidden; border: 1.5px solid var(--ink); background: var(--paper-2); display: block; }
+  .gtile img { width: 100%; height: 100%; }
+  .fit-cover img { object-fit: cover; object-position: center; }
+  .fit-contain img { object-fit: contain; padding: 8%; }
+  .gtile-tag { position: absolute; left: 0; bottom: 0; font-size: .56rem; letter-spacing: .1em; text-transform: uppercase; color: var(--paper); background: var(--ink); padding: 3px 7px; transform: translateY(101%); transition: transform .24s var(--ease); }
+  .gtile-plus { position: absolute; top: 6px; right: 8px; font-size: .9rem; color: var(--ink); opacity: 0; transition: opacity .2s var(--ease); }
+  .gtile:hover { border-color: var(--blue); }
+  .gtile:hover .gtile-tag { transform: translateY(0); }
+  .gtile:hover .gtile-plus { opacity: 1; }
+
+  /* index table */
+  .idx-wrap { padding-top: clamp(3rem, 7vw, 6rem); }
+  .idx { list-style: none; margin: 0 0 2rem; padding: 0; border-top: 1.5px solid var(--ink); }
+  .idx-row { display: grid; grid-template-columns: 3.2rem minmax(0,1.5fr) minmax(0,1.3fr) 5rem 1.4rem; align-items: baseline; gap: 1rem; padding: 1.05rem .4rem; border-bottom: 1px solid var(--line-2); transition: background .18s var(--ease), padding-left .2s var(--ease); }
+  .idx-row:hover { background: var(--paper-2); padding-left: 1rem; }
+  .idx-n { color: var(--blue); font-size: .84rem; font-weight: 700; }
+  .idx-title { font-weight: 700; font-size: clamp(1.05rem, 2.4vw, 1.5rem); letter-spacing: -.01em; }
+  .idx-disc { font-size: .72rem; color: var(--graphite); text-transform: uppercase; letter-spacing: .06em; }
+  .idx-year { font-size: .78rem; color: var(--graphite); text-align: right; }
+  .idx-arw { text-align: right; color: var(--ink); transition: transform .2s var(--ease); }
+  .idx-row:hover .idx-arw { transform: translateX(4px); color: var(--blue); }
+  .idx-cta { margin-top: .5rem; }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 860px) {
+    .hero { grid-template-columns: 1fr; gap: 2.2rem; }
+    .divider { display: none; }
+    .col-right { position: static; }
+    .gallery {
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-areas: none;
+      aspect-ratio: auto;
+    }
+    .gtile { grid-area: auto !important; aspect-ratio: 1 / 1; }
+    .a-rui, .a-tok { aspect-ratio: 1 / 1; }
+    .gtile-tag { transform: translateY(0); font-size: .5rem; }
+  }
+  @media (max-width: 720px) {
+    .idx-row { grid-template-columns: 2.4rem 1fr 1.1rem; }
+    .idx-disc, .idx-year { display: none; }
+  }
+</style>

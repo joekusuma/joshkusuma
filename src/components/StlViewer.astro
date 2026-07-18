@@ -1,0 +1,185 @@
+---
+import { Image } from 'astro:assets';
+import { pic } from '../data/projects.js';
+const { models = [], poster = null, label = '3D model' } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const posterImg = poster ? pic(poster) : null;
+---
+<div
+  class="stlv"
+  data-stlv
+  data-base={base}
+  data-models={JSON.stringify(models)}
+>
+  <div class="stlv-stage">
+    <canvas class="stlv-canvas" aria-label={`Interactive 3D viewer: ${label}`}></canvas>
+
+    <div class="stlv-loading" data-stlv-loading>
+      {posterImg && <Image src={posterImg} alt={label} widths={[400, 700]} sizes="60vw" />}
+      <span class="stlv-loading-tag mono">LOADING MODEL…</span>
+    </div>
+
+    <span class="stlv-hint mono" data-stlv-hint>DRAG TO ROTATE · SCROLL TO ZOOM</span>
+    <span class="stlv-badge mono">STL · LIVE</span>
+    <span class="stlv-corner tl" aria-hidden="true"></span>
+    <span class="stlv-corner br" aria-hidden="true"></span>
+  </div>
+
+  {models.length > 1 && (
+    <div class="stlv-parts" data-stlv-parts>
+      {models.map((m, i) => (
+        <button class={`stlv-part${i === 0 ? ' on' : ''}`} data-part={i}>{m.name}</button>
+      ))}
+    </div>
+  )}
+</div>
+
+<style>
+  .stlv { width: 100%; }
+  .stlv-stage {
+    position: relative; width: 100%; aspect-ratio: 4 / 3;
+    background:
+      radial-gradient(120% 120% at 50% 20%, #fff 0%, var(--paper-2) 70%, var(--paper-3) 100%);
+    border: 1.5px solid var(--ink); overflow: hidden;
+  }
+  .stlv-canvas { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+  .stlv-canvas:active { cursor: grabbing; }
+
+  .stlv-loading { position: absolute; inset: 0; display: grid; place-items: center; background: var(--paper-2); transition: opacity .5s var(--ease); }
+  .stlv-loading img { width: 70%; height: 70%; object-fit: contain; opacity: .5; }
+  .stlv-loading-tag { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); font-size: .6rem; color: var(--graphite); }
+  .stlv-loading.hidden { opacity: 0; pointer-events: none; }
+
+  .stlv-hint { position: absolute; bottom: 10px; left: 12px; font-size: .55rem; color: var(--graphite); background: color-mix(in srgb, var(--paper) 70%, transparent); padding: 2px 6px; transition: opacity .3s; }
+  .stlv-badge { position: absolute; top: 10px; left: 12px; font-size: .55rem; color: var(--paper); background: var(--ink); padding: 2px 7px; }
+  .stlv-corner { position: absolute; width: 12px; height: 12px; }
+  .stlv-corner.tl { top: 7px; right: 10px; border-top: 1.5px solid var(--red); border-right: 1.5px solid var(--red); }
+  .stlv-corner.br { bottom: 7px; right: 10px; border-bottom: 1.5px solid var(--red); border-right: 1.5px solid var(--red); }
+
+  .stlv-parts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .stlv-part {
+    font-family: var(--font-mono); font-size: .7rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+    padding: .5rem .8rem; border: 1.5px solid var(--line-2); background: var(--paper); color: var(--graphite);
+    transition: border-color .2s, color .2s, background .2s;
+  }
+  .stlv-part:hover { border-color: var(--ink); color: var(--ink); }
+  .stlv-part.on { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+</style>
+
+<script>
+  import * as THREE from 'three';
+  import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
+  import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+
+  function initViewer(root: HTMLElement) {
+    const canvas = root.querySelector('canvas') as HTMLCanvasElement;
+    const loading = root.querySelector('[data-stlv-loading]') as HTMLElement;
+    const base = root.dataset.base || '';
+    const models = JSON.parse(root.dataset.models || '[]') as { name: string; file: string }[];
+    if (!canvas || models.length === 0) return;
+
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const stage = root.querySelector('.stlv-stage') as HTMLElement;
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 5000);
+    camera.position.set(120, 90, 160);
+
+    // studio lighting for a clean shaded-model look
+    scene.add(new THREE.HemisphereLight(0xffffff, 0xcfccbf, 1.05));
+    const key = new THREE.DirectionalLight(0xffffff, 1.4); key.position.set(1, 1.4, 1); scene.add(key);
+    const fill = new THREE.DirectionalLight(0xdfe6ff, 0.5); fill.position.set(-1, 0.3, -0.6); scene.add(fill);
+
+    const controls = new OrbitControls(camera, canvas);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.autoRotate = !reduce;
+    controls.autoRotateSpeed = 1.1;
+    controls.enablePan = false;
+    controls.minDistance = 40;
+    controls.maxDistance = 900;
+
+    const loader = new STLLoader();
+    let current: THREE.Mesh | null = null;
+    let edges: THREE.LineSegments | null = null;
+
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0xe6e3da, metalness: 0.15, roughness: 0.72, flatShading: false,
+    });
+    const edgeMat = new THREE.LineBasicMaterial({ color: 0x14161d, transparent: true, opacity: 0.28 });
+
+    function fit(geo: THREE.BufferGeometry) {
+      geo.computeBoundingBox();
+      const bb = geo.boundingBox!;
+      const c = new THREE.Vector3(); bb.getCenter(c);
+      geo.translate(-c.x, -c.y, -c.z);
+      const size = new THREE.Vector3(); bb.getSize(size);
+      const maxd = Math.max(size.x, size.y, size.z) || 1;
+      const s = 100 / maxd;
+      geo.scale(s, s, s);
+      geo.computeVertexNormals();
+    }
+
+    function load(idx: number) {
+      loader.load(base + '/models/' + models[idx].file, (geo) => {
+        fit(geo);
+        if (current) { scene.remove(current); current.geometry.dispose(); }
+        if (edges) { scene.remove(edges); edges.geometry.dispose(); }
+        current = new THREE.Mesh(geo, mat);
+        scene.add(current);
+        const eg = new THREE.EdgesGeometry(geo, 32);
+        edges = new THREE.LineSegments(eg, edgeMat);
+        scene.add(edges);
+        loading.classList.add('hidden');
+      }, undefined, (err) => {
+        console.error('STL load failed', err);
+        const tag = loading.querySelector('.stlv-loading-tag');
+        if (tag) tag.textContent = 'PREVIEW ONLY';
+      });
+    }
+
+    function resize() {
+      const w = stage.clientWidth, h = stage.clientHeight;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h; camera.updateProjectionMatrix();
+    }
+    resize();
+    new ResizeObserver(resize).observe(stage);
+
+    let raf = 0;
+    let visible = true;
+    function tick() {
+      controls.update();
+      if (current && reduce) current.rotation.y += 0; // static
+      renderer.render(scene, camera);
+      raf = requestAnimationFrame(tick);
+    }
+    // pause when offscreen
+    const io = new IntersectionObserver((ents) => {
+      visible = ents[0].isIntersecting;
+      if (visible && !raf) tick();
+      if (!visible && raf) { cancelAnimationFrame(raf); raf = 0; }
+    }, { threshold: 0.05 });
+    io.observe(root);
+
+    load(0);
+    tick();
+
+    const parts = root.querySelector('[data-stlv-parts]');
+    if (parts) {
+      parts.querySelectorAll<HTMLButtonElement>('.stlv-part').forEach((b) => {
+        b.addEventListener('click', () => {
+          parts.querySelectorAll('.stlv-part').forEach((x) => x.classList.remove('on'));
+          b.classList.add('on');
+          loading.classList.remove('hidden');
+          load(Number(b.dataset.part));
+        });
+      });
+    }
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-stlv]').forEach(initViewer);
+</script>
