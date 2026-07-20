@@ -1,0 +1,74 @@
+---
+import { Image, getImage } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import Lightbox from '../components/Lightbox.astro';
+import { japanPhotos, usPhotos } from '../data/photos.js';
+
+async function withFull(list) {
+  return Promise.all(list.map(async (p) => ({ ...p, full: (await getImage({ src: p.img, width: 1600, format: 'webp' })).src })));
+}
+const japan = await withFull(japanPhotos);
+const us = await withFull(usPhotos);
+
+const sections = [
+  { key: 'us', eyebrow: 'A', place: 'United States', sub: 'Los Angeles & Southern California', photos: us },
+  { key: 'jp', eyebrow: 'B', place: 'Japan', sub: 'Tokyo — a learning journey', photos: japan },
+];
+---
+<Base current="photos" title="Photographs" description="Photography from Los Angeles and a learning journey in Tokyo.">
+  <div class="wrap ph-head">
+    <span class="eyebrow"><span class="n">02</span> Photographs</span>
+    <h1>Places, on foot.</h1>
+    <p class="ph-lede">Two trips, one camera roll — Southern California and a learning journey through Tokyo. Tap any frame to open it.</p>
+  </div>
+
+  {sections.map((s) => (
+    <section class="wrap ph-section">
+      <div class="ph-bar">
+        <span class="ph-idx mono">{s.eyebrow}</span>
+        <h2>{s.place}</h2>
+        <span class="ph-sub">{s.sub}</span>
+        <span class="ph-count mono">{String(s.photos.length).padStart(2, '0')} frames</span>
+      </div>
+      <div class="ph-grid">
+        {s.photos.map((p, i) => (
+          <button
+            class="ph-cell"
+            data-lightbox data-lb-group={`ph-${s.key}`}
+            data-full={p.full} data-caption={p.name} data-idx={`${s.key.toUpperCase()}${String(i + 1).padStart(2, '0')}`}
+            data-dl={p.full}
+            aria-label={`Open: ${p.name}`}
+          >
+            <Image src={p.img} alt={p.name} widths={[320, 640]} sizes="(max-width:600px) 46vw, (max-width:1000px) 30vw, 22vw" />
+            <span class="ph-name">{p.name}</span>
+          </button>
+        ))}
+      </div>
+    </section>
+  ))}
+
+  <Lightbox />
+</Base>
+
+<style>
+  .ph-head { padding: 1.6rem 0 1.4rem; }
+  .ph-head h1 { font-size: clamp(2.4rem, 6vw, 4.6rem); font-weight: 900; letter-spacing: -.035em; line-height: .95; margin: .6rem 0 .5rem; }
+  .ph-lede { font-size: clamp(1rem, 1.6vw, 1.15rem); font-weight: 300; color: var(--ink-soft); max-width: 60ch; }
+
+  .ph-section { margin-bottom: 2.6rem; }
+  .ph-bar { display: flex; align-items: baseline; gap: .9rem; flex-wrap: wrap; border-top: 1.5px solid var(--ink); padding: .9rem 0 1.1rem; }
+  .ph-idx { font-size: .7rem; color: var(--paper); background: var(--ink); padding: 2px 8px; align-self: center; }
+  .ph-bar h2 { font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 800; letter-spacing: -.02em; }
+  .ph-sub { font-size: .9rem; color: var(--graphite); font-style: italic; flex: 1; }
+  .ph-count { font-size: .64rem; color: var(--faint); }
+
+  .ph-grid { columns: 4 220px; column-gap: 12px; }
+  .ph-cell { display: block; width: 100%; margin: 0 0 12px; padding: 0; border: 1.5px solid var(--line-2); background: var(--paper-2); position: relative; overflow: hidden; cursor: zoom-in; break-inside: avoid; transition: border-color .2s; }
+  .ph-cell:hover { border-color: var(--blue); }
+  .ph-cell img { width: 100%; height: auto; display: block; }
+  .ph-name { position: absolute; left: 0; right: 0; bottom: 0; font-family: var(--font-mono); font-size: .6rem; letter-spacing: .02em; color: var(--paper); background: linear-gradient(to top, rgba(20,22,29,.82), transparent); padding: 1.4rem .6rem .5rem; text-align: left; opacity: 0; transition: opacity .22s; }
+  .ph-cell:hover .ph-name, .ph-cell:focus-visible .ph-name { opacity: 1; }
+
+  @media (max-width: 1000px) { .ph-grid { columns: 3 180px; } }
+  @media (max-width: 600px) { .ph-grid { columns: 2 140px; } .ph-name { opacity: 1; } }
+</style>

@@ -1,0 +1,60 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import { research, researchImg } from '../data/research.js';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+<Base current="research" title="Research" description="Physics research write-ups by Josh Bennett Kusuma.">
+  <div class="wrap rs-head">
+    <span class="eyebrow"><span class="n">03</span> Research</span>
+    <h1>Physics, written up.</h1>
+    <p class="rs-lede">Short research write-ups on recent physics — plasma, fusion, particle physics, materials, and quantum. Each explains one breakthrough in plain language.</p>
+  </div>
+
+  <div class="wrap rs-list">
+    {research.map((r, i) => (
+      <a class="rs-card" href={`${base}/research/${r.slug}`}>
+        {r.img ? (
+          <div class="rs-thumb"><Image src={researchImg(r.img)} alt={r.title} widths={[300, 600]} sizes="(max-width:720px) 92vw, 260px" /></div>
+        ) : (
+          <div class="rs-thumb rs-thumb-none"><span class="mono">{String(i + 1).padStart(2, '0')}</span></div>
+        )}
+        <div class="rs-body">
+          <span class="rs-field label-blue">{r.field}</span>
+          <h2>{r.title}</h2>
+          <p class="rs-sub">{r.subtitle}</p>
+          <p class="rs-deck">{r.deck}</p>
+          <span class="rs-open mono">Read write-up <span aria-hidden="true">→</span></span>
+        </div>
+      </a>
+    ))}
+  </div>
+</Base>
+
+<style>
+  .rs-head { padding: 1.6rem 0 1.4rem; }
+  .rs-head h1 { font-size: clamp(2.4rem, 6vw, 4.6rem); font-weight: 900; letter-spacing: -.035em; line-height: .95; margin: .6rem 0 .5rem; }
+  .rs-lede { font-size: clamp(1rem, 1.6vw, 1.15rem); font-weight: 300; color: var(--ink-soft); max-width: 62ch; }
+
+  .rs-list { display: grid; gap: 14px; border-top: 1.5px solid var(--ink); padding-top: 1.4rem; }
+  .rs-card { display: grid; grid-template-columns: 240px 1fr; gap: 1.6rem; align-items: stretch; border: 1.5px solid var(--line-2); transition: border-color .2s, background .2s, transform .2s; overflow: hidden; }
+  .rs-card:hover { border-color: var(--blue); background: var(--paper-2); transform: translateY(-2px); }
+  .rs-thumb { position: relative; overflow: hidden; background: var(--paper-2); border-right: 1.5px solid var(--line-2); }
+  .rs-thumb img { width: 100%; height: 100%; object-fit: cover; min-height: 170px; }
+  .rs-thumb-none { display: grid; place-items: center; }
+  .rs-thumb-none span { font-size: 2.4rem; font-weight: 800; color: var(--line-3); }
+  .rs-body { padding: 1.3rem 1.4rem 1.3rem 0; display: flex; flex-direction: column; }
+  .rs-field { font-size: .58rem; margin-bottom: .5rem; }
+  .rs-body h2 { font-size: clamp(1.25rem, 2.6vw, 1.7rem); font-weight: 800; letter-spacing: -.02em; line-height: 1.08; }
+  .rs-sub { font-size: .9rem; font-style: italic; color: var(--graphite); margin: .25rem 0 .7rem; }
+  .rs-deck { font-size: .94rem; line-height: 1.6; color: var(--ink-soft); margin: 0 0 .9rem; max-width: 68ch; }
+  .rs-open { font-size: .68rem; letter-spacing: .06em; color: var(--blue); text-transform: uppercase; margin-top: auto; }
+  .rs-card:hover .rs-open span { display: inline-block; transform: translateX(3px); transition: transform .2s; }
+
+  @media (max-width: 680px) {
+    .rs-card { grid-template-columns: 1fr; }
+    .rs-thumb { border-right: 0; border-bottom: 1.5px solid var(--line-2); }
+    .rs-thumb img { min-height: 150px; max-height: 200px; }
+    .rs-body { padding: 1.2rem 1.3rem; }
+  }
+</style>

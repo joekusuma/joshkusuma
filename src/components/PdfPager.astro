@@ -1,0 +1,66 @@
+---
+import { Image, getImage } from 'astro:assets';
+const { pages, label = 'Tech pack', group = 'pdf' } = Astro.props; // pages: ImageMetadata[]
+const fulls = await Promise.all(pages.map((p) => getImage({ src: p, width: 1600, format: 'webp' })));
+---
+<figure class="pdfp" data-pdfp>
+  <div class="pdfp-stage">
+    <span class="pdfp-badge mono">TECH PACK · PDF</span>
+    <span class="pdfp-count mono" data-pdfp-count>01 / {String(pages.length).padStart(2, '0')}</span>
+    {pages.map((pg, i) => (
+      <button
+        class={`pdfp-page${i === 0 ? ' on' : ''}`}
+        data-pdfp-i={i}
+        data-lightbox
+        data-lb-group={group}
+        data-full={fulls[i].src}
+        data-caption={`${label} — page ${i + 1} of ${pages.length}`}
+        data-idx={`P${String(i + 1).padStart(2, '0')}`}
+        aria-label={`Open page ${i + 1}`}
+      >
+        <Image src={pg} alt={`${label} page ${i + 1}`} widths={[500, 900]} sizes="(max-width:860px) 92vw, 70vw" />
+      </button>
+    ))}
+    <button class="pdfp-arw prev" data-pdfp-prev aria-label="Previous page">‹</button>
+    <button class="pdfp-arw next" data-pdfp-next aria-label="Next page">›</button>
+    <span class="pdfp-corner tl" aria-hidden="true"></span>
+    <span class="pdfp-corner br" aria-hidden="true"></span>
+  </div>
+  <figcaption class="pdfp-hint mono">Use the arrows to page through · click to enlarge</figcaption>
+</figure>
+
+<style>
+  .pdfp { margin: 0; }
+  .pdfp-stage { position: relative; width: 100%; aspect-ratio: 16 / 10; background: radial-gradient(120% 120% at 50% 12%, #fff, var(--paper-2)); border: 1.5px solid var(--ink); overflow: hidden; }
+  .pdfp-badge { position: absolute; top: 10px; left: 12px; z-index: 5; font-size: .56rem; color: var(--paper); background: var(--ink); padding: 2px 7px; }
+  .pdfp-count { position: absolute; top: 10px; right: 12px; z-index: 5; font-size: .6rem; color: var(--graphite); background: color-mix(in srgb, var(--paper) 72%, transparent); padding: 2px 7px; }
+
+  .pdfp-page { position: absolute; inset: 0; border: 0; background: transparent; padding: clamp(.8rem, 2.4vw, 2rem); display: grid; place-items: center; opacity: 0; pointer-events: none; transition: opacity .3s var(--ease); cursor: zoom-in; }
+  .pdfp-page.on { opacity: 1; pointer-events: auto; }
+  .pdfp-page img { max-width: 100%; max-height: 100%; width: auto; object-fit: contain; box-shadow: 0 2px 18px rgba(20,22,29,.12); }
+
+  .pdfp-arw { position: absolute; top: 50%; transform: translateY(-50%); z-index: 6; width: 42px; height: 42px; border: 1.5px solid var(--ink); background: color-mix(in srgb, var(--paper) 82%, transparent); color: var(--ink); font-size: 1.5rem; line-height: 1; display: grid; place-items: center; transition: background .2s, color .2s; }
+  .pdfp-arw:hover { background: var(--ink); color: var(--paper); }
+  .pdfp-arw.prev { left: 10px; } .pdfp-arw.next { right: 10px; }
+
+  .pdfp-corner { position: absolute; width: 12px; height: 12px; z-index: 5; }
+  .pdfp-corner.tl { top: 7px; right: 46px; border-top: 1.5px solid var(--red); border-right: 1.5px solid var(--red); }
+  .pdfp-corner.br { bottom: 7px; right: 12px; border-bottom: 1.5px solid var(--red); border-right: 1.5px solid var(--red); }
+
+  .pdfp-hint { margin-top: .7rem; font-size: .62rem; color: var(--faint); }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-pdfp]').forEach((root) => {
+    const pages = Array.from(root.querySelectorAll<HTMLElement>('.pdfp-page'));
+    const count = root.querySelector('[data-pdfp-count]') as HTMLElement;
+    let i = 0;
+    function show(n: number) {
+      i = (n + pages.length) % pages.length;
+      pages.forEach((p, k) => p.classList.toggle('on', k === i));
+      if (count) count.textContent = `${String(i + 1).padStart(2, '0')} / ${String(pages.length).padStart(2, '0')}`;
+    }
+    root.querySelector('[data-pdfp-prev]')!.addEventListener('click', (e) => { e.stopPropagation(); show(i - 1); });
+    root.querySelector('[data-pdfp-next]')!.addEventListener('click', (e) => { e.stopPropagation(); show(i + 1); });
+  });
+</script>

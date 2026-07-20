@@ -1,0 +1,84 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../../layouts/Base.astro';
+import { research, researchImg } from '../../data/research.js';
+
+export function getStaticPaths() {
+  return research.map((r, i) => ({
+    params: { slug: r.slug },
+    props: { paper: r, prev: research[(i - 1 + research.length) % research.length], next: research[(i + 1) % research.length] },
+  }));
+}
+const { paper: r, prev, next } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const body = r.blocks.filter((b) => b.t !== 'img');
+---
+<Base current="research" title={r.title} description={r.deck}>
+  <article class="ra">
+    <div class="wrap ra-crumb">
+      <a href={`${base}/research`} class="mono crumb-link">← ALL RESEARCH</a>
+      <span class="mono crumb-idx">{r.field}</span>
+    </div>
+
+    <header class="wrap ra-head">
+      <span class="ra-field label-blue">{r.field}</span>
+      <h1>{r.title}</h1>
+      <p class="ra-sub">{r.subtitle}</p>
+    </header>
+
+    {r.img && (
+      <div class="wrap ra-hero-wrap">
+        <figure class="ra-hero">
+          <Image src={researchImg(r.img)} alt={r.title} widths={[700, 1200]} sizes="(max-width:860px) 94vw, 78vw" />
+        </figure>
+      </div>
+    )}
+
+    <div class="wrap ra-body">
+      <p class="ra-deck">{r.deck}</p>
+      {body.map((b) => (
+        b.t === 'h' ? <h2 class="ra-h">{b.v}</h2> : <p class="ra-p">{b.v}</p>
+      ))}
+    </div>
+
+    <nav class="wrap ra-nav" aria-label="Research navigation">
+      <a href={`${base}/research/${prev.slug}`} class="ra-nav-item prev"><span class="mono">← PREV</span><strong>{prev.title}</strong></a>
+      <a href={`${base}/research/${next.slug}`} class="ra-nav-item next"><span class="mono">NEXT →</span><strong>{next.title}</strong></a>
+    </nav>
+  </article>
+</Base>
+
+<style>
+  .ra { padding-top: 1.6rem; }
+  .ra-crumb { display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; }
+  .crumb-link { font-size: .72rem; color: var(--graphite); letter-spacing: .08em; transition: color .2s; }
+  .crumb-link:hover { color: var(--blue); }
+  .crumb-idx { font-size: .72rem; color: var(--faint); }
+
+  .ra-head { padding: 1rem 0 1.6rem; border-top: 1.5px solid var(--ink); max-width: 60rem; }
+  .ra-field { display: block; margin-bottom: .8rem; }
+  .ra-head h1 { font-size: clamp(2rem, 5vw, 3.6rem); font-weight: 900; letter-spacing: -.03em; line-height: 1; }
+  .ra-sub { font-size: clamp(1.05rem, 2.2vw, 1.35rem); font-weight: 300; font-style: italic; color: var(--ink-soft); margin-top: .7rem; }
+
+  .ra-hero-wrap { margin: .4rem 0 2rem; }
+  .ra-hero { margin: 0; border: 1.5px solid var(--ink); overflow: hidden; background: var(--paper-2); max-height: 60vh; }
+  .ra-hero img { width: 100%; height: 100%; max-height: 60vh; object-fit: cover; display: block; }
+
+  .ra-body { max-width: 44rem; margin-bottom: 3rem; }
+  .ra-deck { font-size: clamp(1.1rem, 1.9vw, 1.28rem); line-height: 1.6; font-weight: 500; color: var(--ink); padding: 1.1rem 0 1.4rem; border-bottom: 1px solid var(--line-2); margin: 0 0 1.6rem; }
+  .ra-h { font-size: clamp(1.2rem, 2.6vw, 1.6rem); font-weight: 800; letter-spacing: -.015em; margin: 2rem 0 .8rem; }
+  .ra-h::before { content: "§ "; color: var(--blue); font-family: var(--font-mono); font-weight: 500; font-size: .8em; }
+  .ra-p { font-size: 1.06rem; line-height: 1.75; color: var(--ink-soft); margin: 0 0 1.15rem; }
+
+  .ra-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; border-top: 1.5px solid var(--ink); padding-top: 1.6rem; }
+  .ra-nav-item { display: flex; flex-direction: column; gap: .35rem; padding: 1.1rem; border: 1.5px solid var(--line-2); transition: border-color .2s, background .2s; }
+  .ra-nav-item:hover { border-color: var(--blue); background: var(--paper-2); }
+  .ra-nav-item span { font-size: .66rem; color: var(--graphite); letter-spacing: .08em; }
+  .ra-nav-item strong { font-size: 1rem; font-weight: 800; letter-spacing: -.01em; line-height: 1.15; }
+  .ra-nav-item.next { text-align: right; align-items: flex-end; }
+
+  @media (max-width: 620px) {
+    .ra-nav { grid-template-columns: 1fr; }
+    .ra-nav-item.next { text-align: left; align-items: flex-start; }
+  }
+</style>

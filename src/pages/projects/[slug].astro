@@ -1,39 +1,54 @@
 ---
-import { Image } from 'astro:assets';
+import { Image, getImage } from 'astro:assets';
 import Base from '../../layouts/Base.astro';
 import StlViewer from '../../components/StlViewer.astro';
+import PdfPager from '../../components/PdfPager.astro';
+import Lightbox from '../../components/Lightbox.astro';
 import { projects, pic, pics } from '../../data/projects.js';
 
 export function getStaticPaths() {
   return projects.map((p, i) => ({
     params: { slug: p.slug },
-    props: {
-      project: p,
-      prev: projects[(i - 1 + projects.length) % projects.length],
-      next: projects[(i + 1) % projects.length],
-    },
+    props: { project: p, prev: projects[(i - 1 + projects.length) % projects.length], next: projects[(i + 1) % projects.length] },
   }));
 }
 
 const { project: p, prev, next } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-const galleryKeys = p.is3d ? (p.partsGallery || []) : (p.gallery || []).filter((k) => k !== p.hero);
-const gallery = pics(...galleryKeys);
-const heroImg = pic(p.hero);
+const pub = (u) => `${base}/${u}`;
+
+async function resolveItem(item) {
+  if (item.img) {
+    const meta = pic(item.img);
+    const full = meta ? (await getImage({ src: meta, width: 1600, format: 'webp' })).src : '';
+    return { ...item, meta, src: meta?.src, full };
+  }
+  return { ...item, meta: null, src: pub(item.url), full: pub(item.url) };
+}
+
+const plates = await Promise.all((p.plates || []).map(resolveItem));
+const process = await Promise.all((p.process || []).map(resolveItem));
+const briefPhotos = await Promise.all((p.briefPhotos || []).map(resolveItem));
+const descImages = await Promise.all((p.descImages || []).map(resolveItem));
+const prototypes = await Promise.all((p.prototypes || []).map(async (pr) => ({
+  ...pr,
+  photoFull: pr.photo ? (await getImage({ src: pic(pr.photo), width: 1400, format: 'webp' })).src : '',
+})));
+const heroImg = p.hero ? pic(p.hero) : null;
+const pdfPages = p.pdfPages ? pics(...p.pdfPages) : [];
+const hasProcess = process.length > 0;
 ---
 <Base current="projects" title={p.title} description={p.blurb}>
   <article class="detail">
-    <!-- breadcrumb -->
     <div class="wrap dt-crumb">
       <a href={`${base}/projects`} class="mono crumb-link">← ALL PROJECTS</a>
       <span class="mono crumb-idx">{p.index} / {String(projects.length).padStart(2, '0')}</span>
     </div>
 
-    <!-- title block -->
     <header class="wrap dt-head">
       <span class="dt-disc label-blue">{p.disciplineLabel}</span>
       <h1>{p.title}</h1>
-      <p class="dt-tag">{p.tagline}</p>
+      {p.tagline && <p class="dt-tag">{p.tagline}</p>}
       <div class="dt-meta">
         <span><i class="mono">YEAR</i> {p.year}</span>
         <span><i class="mono">TYPE</i> {p.kind}</span>
@@ -41,11 +56,21 @@ const heroImg = pic(p.hero);
       </div>
     </header>
 
-    <!-- hero visual OR 3D viewer -->
+    <!-- hero -->
     <div class="wrap dt-hero-wrap">
-      {p.is3d ? (
-        <StlViewer models={p.models} poster={p.hero} label={p.title} />
-      ) : (
+      {p.heroType === 'pdf' && <PdfPager pages={pdfPages} label="RŪI tech pack" group="rui-pdf" />}
+      {p.heroType === '3d' && (
+        <div class="dt-3d">
+          <StlViewer models={p.models} poster={p.hero} label={p.title} />
+          {p.download && (
+            <div class="dt-3d-bar">
+              <span class="mono">Orbit to rotate · switch views above</span>
+              <a class="btn" href={pub('downloads/' + p.download)} download>↓ Print-ready parts (.zip)</a>
+            </div>
+          )}
+        </div>
+      )}
+      {(p.heroType === 'image' || p.heroType === 'fitted') && heroImg && (
         <figure class={`dt-hero ${p.heroFit}`}>
           <Image src={heroImg} alt={p.title} widths={[600, 1000, 1400]} sizes="(max-width:860px) 94vw, 78vw" />
           <span class="dt-hero-tag mono">FIG.01 — {p.title.toUpperCase()}</span>
@@ -53,16 +78,55 @@ const heroImg = pic(p.hero);
       )}
     </div>
 
-    <!-- body: summary + spec sheet -->
+    <!-- body -->
     <div class="wrap dt-body">
       <div class="dt-summary">
         <div class="eyebrow"><span class="n">A</span> The brief</div>
         {p.summary.map((para) => <p set:html={para} />)}
 
-        {p.is3d && (
-          <a class="btn dt-dl" href={`${base}/downloads/${p.download}`} download>
-            ↓ Download source files (.zip)
-          </a>
+        {descImages.length > 0 && (
+          <div class="brief-media two">
+            {descImages.map((d, i) => (
+              <button class="bm-item" data-lightbox data-lb-group="brief" data-full={d.full} data-caption={d.caption} data-idx={`D${i + 1}`}>
+                <Image src={d.meta} alt={d.caption} widths={[400, 800]} sizes="(max-width:720px) 46vw, 30vw" />
+              </button>
+            ))}
+          </div>
+        )}
+
+        {briefPhotos.length > 0 && (
+          <div class="brief-media strip">
+            {briefPhotos.map((d, i) => (
+              <button class="bm-item" data-lightbox data-lb-group="brief" data-full={d.full} data-caption={d.caption} data-idx={`P${i + 1}`}>
+                <Image src={d.meta} alt={d.caption} widths={[300, 600]} sizes="(max-width:720px) 30vw, 20vw" />
+              </button>
+            ))}
+          </div>
+        )}
+
+        {hasProcess && (
+          <div class="process">
+            <div class="process-head">
+              <span class="label-blue">Process</span>
+              {p.processNote && <span class="process-note">{p.processNote}</span>}
+            </div>
+            <ol class="process-track">
+              {process.map((s) => (
+                <li class="pstep">
+                  <button class="pstep-img" data-lightbox data-lb-group="process" data-full={s.full} data-caption={s.sub} data-idx={s.step}>
+                    {s.meta ? <Image src={s.meta} alt={s.sub} widths={[220, 440]} sizes="220px" /> : <img src={s.src} alt={s.sub} />}
+                  </button>
+                  <div class="pstep-t"><span class="pstep-n mono">{s.step}</span><strong>{s.label}</strong><span class="pstep-sub">{s.sub}</span></div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+
+        {p.links && p.links.length > 0 && (
+          <div class="dt-links">
+            {p.links.map((l) => <a class="dt-link" href={l.url} target="_blank" rel="noopener">{l.label} <span aria-hidden="true">↗</span></a>)}
+          </div>
         )}
       </div>
 
@@ -72,9 +136,7 @@ const heroImg = pic(p.hero);
           <dl class="spec-list">
             <div class="spec-row"><dt>Discipline</dt><dd>{p.disciplineLabel}</dd></div>
             <div class="spec-row"><dt>Year</dt><dd>{p.year}</dd></div>
-            {p.specs.map(([k, v]) => (
-              <div class="spec-row"><dt>{k}</dt><dd set:html={v} /></div>
-            ))}
+            {p.specs.map(([k, v]) => (<div class="spec-row"><dt>{k}</dt><dd set:html={v} /></div>))}
             <div class="spec-row"><dt>Tools</dt><dd>{p.tools.join(', ')}</dd></div>
           </dl>
           <div class="spec-foot mono">REF · {p.slug.toUpperCase()}</div>
@@ -82,34 +144,68 @@ const heroImg = pic(p.hero);
       </aside>
     </div>
 
-    <!-- gallery / parts -->
-    {gallery.length > 0 && (
-      <section class="wrap dt-gallery-wrap">
-        <div class="eyebrow"><span class="n">B</span> {p.is3d ? 'Selected parts' : 'Plates'}</div>
-        <div class={`dt-gallery${p.is3d ? ' parts' : ''}`}>
-          {gallery.map((g, i) => (
-            <figure class="plate">
-              <Image src={g} alt={`${p.title} — plate ${i + 2}`} widths={[400, 800]} sizes="(max-width:720px) 92vw, 46vw" />
-              <figcaption class="mono">{String(i + 2).padStart(2, '0')}</figcaption>
-            </figure>
+    <!-- tentacle: prototype log -->
+    {prototypes.length > 0 && (
+      <section class="wrap dt-proto-wrap">
+        <div class="eyebrow"><span class="n">B</span> Prototype log — every stage, downloadable</div>
+        <ol class="protos">
+          {prototypes.map((pr, i) => (
+            <li class="proto">
+              <div class="proto-head">
+                <span class="proto-n mono">{String(i + 1).padStart(2, '0')}</span>
+                <strong>{pr.name}</strong>
+                <a class="proto-dl mono" href={pub('downloads/' + pr.download)} download>↓ .zip</a>
+              </div>
+              <p class="proto-desc">{pr.desc}</p>
+              {(pr.photo || pr.video) && (
+                <div class="proto-media">
+                  {pr.photo && (
+                    <button class="proto-photo" data-lightbox data-lb-group="proto" data-full={pr.photoFull} data-caption={`${pr.name} — printed`} data-idx={`R${i + 1}`}>
+                      <Image src={pic(pr.photo)} alt={`${pr.name} printed`} widths={[300, 600]} sizes="(max-width:720px) 45vw, 24vw" />
+                    </button>
+                  )}
+                  {pr.video && (
+                    <figure class="proto-video">
+                      <video controls playsinline preload="none" poster={pub(pr.poster)}>
+                        <source src={pub(pr.video)} type="video/mp4" />
+                      </video>
+                      <figcaption class="mono">Mechanism test</figcaption>
+                    </figure>
+                  )}
+                </div>
+              )}
+            </li>
           ))}
-        </div>
-        {p.is3d && <p class="parts-note mono">Showing {gallery.length} of {p.specs.find((s) => s[0] === 'Parts')?.[1] || 'many'} — full set in the download.</p>}
+        </ol>
       </section>
     )}
 
-    <!-- prev / next -->
+    <!-- plates -->
+    {plates.length > 0 && (
+      <section class="wrap dt-gallery-wrap">
+        <div class="eyebrow"><span class="n">{prototypes.length > 0 ? 'C' : 'B'}</span> {p.is3d ? 'Selected parts' : 'Plates'}</div>
+        <div class="dt-gallery">
+          {plates.map((pl, i) => (
+            <figure class="plate">
+              <button class="plate-open" data-lightbox data-lb-group="plates" data-full={pl.full} data-caption={pl.caption} data-idx={String(i + 2).padStart(2, '0')} data-dl={pl.download ? pub('downloads/' + pl.download) : ''} aria-label={`Enlarge: ${pl.caption}`}>
+                {pl.meta ? <Image src={pl.meta} alt={pl.caption} widths={[400, 800]} sizes="(max-width:720px) 92vw, 46vw" /> : <img src={pl.src} alt={pl.caption} />}
+                <span class="plate-zoom" aria-hidden="true">⤢</span>
+              </button>
+              <figcaption class="plate-cap"><span class="mono">{String(i + 2).padStart(2, '0')}</span> {pl.caption}</figcaption>
+              {pl.download && <a class="plate-dl mono" href={pub('downloads/' + pl.download)} download>↓ PDF</a>}
+            </figure>
+          ))}
+        </div>
+      </section>
+    )}
+
     <nav class="wrap dt-nav" aria-label="Project navigation">
-      <a href={`${base}/projects/${prev.slug}`} class="dt-nav-item prev">
-        <span class="mono">← PREV</span>
-        <strong>{prev.title}</strong>
-      </a>
-      <a href={`${base}/projects/${next.slug}`} class="dt-nav-item next">
-        <span class="mono">NEXT →</span>
-        <strong>{next.title}</strong>
-      </a>
+      <a href={`${base}/projects/${prev.slug}`} class="dt-nav-item prev"><span class="mono">← PREV</span><strong>{prev.title}</strong></a>
+      <a href={`${base}/projects/${next.slug}`} class="dt-nav-item next"><span class="mono">NEXT →</span><strong>{next.title}</strong></a>
     </nav>
   </article>
+
+  <Lightbox />
 </Base>
 
 <style>
@@ -133,10 +229,38 @@ const heroImg = pic(p.hero);
   .dt-hero.contain { display: grid; place-items: center; padding: clamp(1rem, 3vw, 2.4rem); }
   .dt-hero.contain img { max-height: 66vh; width: auto; max-width: 100%; object-fit: contain; }
   .dt-hero-tag { position: absolute; bottom: 10px; left: 12px; font-size: .58rem; color: var(--graphite); background: color-mix(in srgb, var(--paper) 72%, transparent); padding: 2px 7px; }
+  .dt-3d-bar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-top: .8rem; }
+  .dt-3d-bar .mono { font-size: .62rem; color: var(--faint); }
 
   .dt-body { display: grid; grid-template-columns: 1.55fr 1fr; gap: clamp(1.6rem, 4vw, 3.4rem); align-items: start; margin-bottom: 3rem; }
+  .dt-summary { min-width: 0; }
   .dt-summary p { font-size: clamp(1rem, 1.5vw, 1.12rem); line-height: 1.72; color: var(--ink-soft); margin: 0 0 1.1rem; }
-  .dt-dl { margin-top: 1rem; }
+
+  .brief-media { display: grid; gap: 10px; margin: 1.4rem 0; }
+  .brief-media.two { grid-template-columns: 1fr 1fr; }
+  .brief-media.strip { grid-template-columns: repeat(3, 1fr); }
+  .bm-item { border: 1.5px solid var(--line-2); background: var(--paper-2); padding: 0; overflow: hidden; cursor: zoom-in; aspect-ratio: 4 / 3; transition: border-color .2s; }
+  .brief-media.strip .bm-item { aspect-ratio: 3 / 4; }
+  .bm-item:hover { border-color: var(--blue); }
+  .bm-item img { width: 100%; height: 100%; object-fit: cover; }
+
+  .process { margin-top: 1.8rem; border-top: 1px solid var(--line-2); padding-top: 1.4rem; min-width: 0; }
+  .process-head { display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .process-note { font-size: .82rem; color: var(--graphite); }
+  .process-track { list-style: none; margin: 0; padding: 0 0 .5rem; display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; min-width: 0; }
+  .pstep { scroll-snap-align: start; flex: 0 0 clamp(150px, 30%, 200px); display: flex; flex-direction: column; gap: .6rem; position: relative; }
+  .pstep:not(:last-child)::after { content: "→"; position: absolute; right: -11px; top: 34%; color: var(--blue); font-family: var(--font-mono); z-index: 2; }
+  .pstep-img { border: 1.5px solid var(--line-2); background: var(--paper-2); aspect-ratio: 4 / 3; padding: 0; overflow: hidden; cursor: zoom-in; transition: border-color .2s; }
+  .pstep-img:hover { border-color: var(--blue); }
+  .pstep-img img { width: 100%; height: 100%; object-fit: cover; }
+  .pstep-t { display: flex; flex-direction: column; gap: .1rem; }
+  .pstep-n { font-size: .62rem; color: var(--blue); font-weight: 700; }
+  .pstep-t strong { font-size: .92rem; font-weight: 800; letter-spacing: -.01em; }
+  .pstep-sub { font-size: .74rem; color: var(--graphite); line-height: 1.35; }
+
+  .dt-links { margin-top: 1.4rem; display: flex; flex-direction: column; gap: .5rem; }
+  .dt-link { font-size: .9rem; color: var(--blue); border: 1px solid var(--line-2); padding: .6rem .9rem; transition: border-color .2s, background .2s; }
+  .dt-link:hover { border-color: var(--blue); background: var(--paper-2); }
 
   .dt-specs { position: sticky; top: 22px; }
   .spec-card { border: 1.5px solid var(--ink); }
@@ -148,16 +272,35 @@ const heroImg = pic(p.hero);
   .spec-row dd { margin: 0; font-size: .82rem; color: var(--ink); font-weight: 500; }
   .spec-foot { font-size: .58rem; color: var(--faint); padding: .6rem .9rem; border-top: 1.5px solid var(--ink); text-align: right; }
 
+  /* prototype log */
+  .dt-proto-wrap { margin-bottom: 3rem; }
+  .protos { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+  .proto { border: 1.5px solid var(--line-2); padding: 1.1rem 1.2rem; }
+  .proto-head { display: flex; align-items: center; gap: .8rem; margin-bottom: .5rem; }
+  .proto-n { font-size: .66rem; color: var(--paper); background: var(--ink); padding: 2px 7px; }
+  .proto-head strong { font-size: 1.05rem; font-weight: 800; letter-spacing: -.01em; flex: 1; }
+  .proto-dl { font-size: .6rem; color: var(--paper); background: var(--red); padding: 4px 9px; }
+  .proto-dl:hover { background: var(--ink); }
+  .proto-desc { font-size: .95rem; line-height: 1.6; color: var(--ink-soft); margin: 0; }
+  .proto-media { display: flex; gap: 12px; margin-top: 1rem; flex-wrap: wrap; }
+  .proto-photo { border: 1.5px solid var(--line-2); background: var(--paper-2); padding: 0; overflow: hidden; cursor: zoom-in; width: clamp(180px, 40%, 260px); aspect-ratio: 4 / 3; }
+  .proto-photo img { width: 100%; height: 100%; object-fit: cover; }
+  .proto-video { margin: 0; width: clamp(220px, 52%, 360px); border: 1.5px solid var(--line-2); overflow: hidden; }
+  .proto-video video { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; background: #000; }
+  .proto-video figcaption { font-size: .6rem; color: var(--graphite); padding: .4rem .6rem; }
+
   .dt-gallery-wrap { margin-bottom: 3rem; }
   .dt-gallery { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-  .dt-gallery.parts { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
-  .plate { position: relative; margin: 0; border: 1.5px solid var(--line-2); background: var(--paper-2); overflow: hidden; }
-  .dt-gallery:not(.parts) .plate { aspect-ratio: 4 / 3; }
-  .dt-gallery.parts .plate { aspect-ratio: 1 / 1; }
-  .plate img { width: 100%; height: 100%; object-fit: contain; padding: 6%; }
-  .dt-gallery:not(.parts) .plate img { object-fit: cover; padding: 0; }
-  .plate figcaption { position: absolute; top: 6px; left: 8px; font-size: .56rem; color: var(--graphite); background: color-mix(in srgb, var(--paper) 70%, transparent); padding: 1px 5px; }
-  .parts-note { margin-top: 1rem; font-size: .66rem; color: var(--faint); }
+  .plate { position: relative; margin: 0; display: flex; flex-direction: column; }
+  .plate-open { position: relative; border: 1.5px solid var(--line-2); background: var(--paper-2); overflow: hidden; padding: 0; cursor: zoom-in; transition: border-color .2s; aspect-ratio: 4 / 3; }
+  .plate-open:hover { border-color: var(--blue); }
+  .plate-open img { width: 100%; height: 100%; object-fit: cover; }
+  .plate-zoom { position: absolute; top: 8px; right: 10px; font-size: 1rem; color: var(--ink); background: color-mix(in srgb, var(--paper) 74%, transparent); width: 26px; height: 26px; display: grid; place-items: center; opacity: 0; transition: opacity .2s; }
+  .plate-open:hover .plate-zoom { opacity: 1; }
+  .plate-cap { font-size: .78rem; color: var(--ink-soft); padding: .5rem 0 0; display: flex; gap: .5rem; }
+  .plate-cap .mono { color: var(--faint); }
+  .plate-dl { position: absolute; top: 8px; left: 8px; font-size: .58rem; color: var(--paper); background: var(--red); padding: 3px 7px; letter-spacing: .04em; }
+  .plate-dl:hover { background: var(--ink); }
 
   .dt-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; border-top: 1.5px solid var(--ink); padding-top: 1.6rem; }
   .dt-nav-item { display: flex; flex-direction: column; gap: .35rem; padding: 1.1rem; border: 1.5px solid var(--line-2); transition: border-color .2s, background .2s; }
@@ -172,6 +315,7 @@ const heroImg = pic(p.hero);
   }
   @media (max-width: 620px) {
     .dt-gallery { grid-template-columns: 1fr; }
+    .brief-media.two { grid-template-columns: 1fr; }
     .dt-nav { grid-template-columns: 1fr; }
     .dt-nav-item.next { text-align: left; align-items: flex-start; }
   }

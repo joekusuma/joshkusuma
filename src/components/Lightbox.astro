@@ -1,0 +1,119 @@
+---
+// Global lightbox. Any element with [data-lightbox] data-full data-caption opens it.
+---
+<div class="lb" data-lb hidden aria-hidden="true">
+  <button class="lb-backdrop" data-lb-close aria-label="Close"></button>
+  <div class="lb-inner" role="dialog" aria-modal="true" aria-label="Image viewer">
+    <button class="lb-close" data-lb-close aria-label="Close viewer">✕</button>
+    <button class="lb-nav prev" data-lb-prev aria-label="Previous">‹</button>
+    <figure class="lb-fig">
+      <img class="lb-img" data-lb-img alt="" />
+      <figcaption class="lb-cap">
+        <span class="lb-idx mono" data-lb-idx></span>
+        <span class="lb-text" data-lb-text></span>
+        <a class="lb-dl mono" data-lb-dl download>↓ Download</a>
+      </figcaption>
+    </figure>
+    <button class="lb-nav next" data-lb-next aria-label="Next">›</button>
+  </div>
+</div>
+
+<style>
+  .lb { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; }
+  .lb[hidden] { display: none; }
+  .lb-backdrop { position: absolute; inset: 0; border: 0; background: rgba(14,16,21,.9); backdrop-filter: blur(3px); cursor: zoom-out; animation: lbfade .2s var(--ease); }
+  @keyframes lbfade { from { opacity: 0; } }
+
+  .lb-inner { position: relative; z-index: 1; width: min(94vw, 1200px); max-height: 92vh; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: .4rem; animation: lbpop .24s var(--ease); }
+  @keyframes lbpop { from { opacity: 0; transform: scale(.97); } }
+
+  .lb-fig { margin: 0; display: flex; flex-direction: column; align-items: center; min-width: 0; }
+  .lb-img { max-width: 100%; max-height: 78vh; width: auto; object-fit: contain; background: var(--paper); border: 1.5px solid #000; }
+  .lb-cap { display: flex; align-items: baseline; gap: .9rem; margin-top: .9rem; color: var(--paper); max-width: 70ch; text-align: center; }
+  .lb-idx { font-size: .82rem; color: #7d8cff; font-weight: 700; }
+  .lb-text { font-size: .96rem; line-height: 1.5; }
+  .lb-dl { font-size: .68rem; color: var(--ink); background: var(--paper); padding: 4px 10px; letter-spacing: .04em; white-space: nowrap; transition: background .2s, color .2s; }
+  .lb-dl:hover { background: #7d8cff; color: var(--paper); }
+
+  .lb-close { position: absolute; top: -2.6rem; right: 0; z-index: 2; width: 38px; height: 38px; border: 1.5px solid var(--paper); background: transparent; color: var(--paper); font-size: 1rem; transition: background .2s, color .2s; }
+  .lb-close:hover { background: var(--paper); color: var(--ink); }
+
+  .lb-nav { width: 46px; height: 46px; border: 1.5px solid rgba(255,255,255,.5); background: rgba(0,0,0,.3); color: var(--paper); font-size: 1.7rem; line-height: 1; display: grid; place-items: center; transition: border-color .2s, background .2s; flex-shrink: 0; }
+  .lb-nav:hover { border-color: var(--paper); background: rgba(0,0,0,.6); }
+
+  @media (max-width: 720px) {
+    .lb-inner { grid-template-columns: 1fr; }
+    .lb-nav { position: absolute; top: 50%; transform: translateY(-50%); z-index: 3; }
+    .lb-nav.prev { left: 4px; } .lb-nav.next { right: 4px; }
+    .lb-img { max-height: 68vh; }
+    .lb-cap { flex-direction: column; gap: .3rem; }
+  }
+</style>
+
+<script>
+  const lb = document.querySelector('[data-lb]') as HTMLElement | null;
+  if (lb) {
+    const img = lb.querySelector('[data-lb-img]') as HTMLImageElement;
+    const idxEl = lb.querySelector('[data-lb-idx]') as HTMLElement;
+    const textEl = lb.querySelector('[data-lb-text]') as HTMLElement;
+    const prevBtn = lb.querySelector('[data-lb-prev]') as HTMLElement;
+    const nextBtn = lb.querySelector('[data-lb-next]') as HTMLElement;
+    const dlEl = lb.querySelector('[data-lb-dl]') as HTMLAnchorElement;
+
+    let items: { full: string; caption: string; idx: string; dl: string }[] = [];
+    let cur = 0;
+
+    function render() {
+      const it = items[cur];
+      if (!it) return;
+      img.src = it.full; img.alt = it.caption || '';
+      idxEl.textContent = it.idx || '';
+      textEl.textContent = it.caption || '';
+      if (dlEl) {
+        const href = it.dl || it.full;
+        dlEl.href = href;
+        dlEl.textContent = it.dl ? '↓ Download file' : '↓ Download image';
+      }
+      const multi = items.length > 1;
+      prevBtn.style.visibility = multi ? 'visible' : 'hidden';
+      nextBtn.style.visibility = multi ? 'visible' : 'hidden';
+    }
+    function open(list: typeof items, start: number) {
+      items = list; cur = start;
+      lb.hidden = false; lb.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      render();
+    }
+    function close() {
+      lb.hidden = true; lb.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+    function step(d: number) { cur = (cur + d + items.length) % items.length; render(); }
+
+    // gather all plate groups on the page
+    document.querySelectorAll<HTMLElement>('[data-lightbox]').forEach((el) => {
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        const group = el.getAttribute('data-lb-group') || 'default';
+        const groupEls = Array.from(document.querySelectorAll<HTMLElement>(`[data-lightbox][data-lb-group="${group}"]`));
+        const list = groupEls.map((g) => ({
+          full: g.getAttribute('data-full') || '',
+          caption: g.getAttribute('data-caption') || '',
+          idx: g.getAttribute('data-idx') || '',
+          dl: g.getAttribute('data-dl') || '',
+        }));
+        open(list, groupEls.indexOf(el));
+      });
+    });
+
+    lb.querySelectorAll('[data-lb-close]').forEach((b) => b.addEventListener('click', close));
+    prevBtn.addEventListener('click', () => step(-1));
+    nextBtn.addEventListener('click', () => step(1));
+    document.addEventListener('keydown', (e) => {
+      if (lb.hidden) return;
+      if (e.key === 'Escape') close();
+      if (e.key === 'ArrowLeft') step(-1);
+      if (e.key === 'ArrowRight') step(1);
+    });
+  }
+</script>
