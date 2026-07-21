@@ -1,5 +1,5 @@
 ---
-// Global lightbox. Any element with [data-lightbox] data-full data-caption opens it.
+// Global lightbox with WhatsApp-style zoom/pan. Any [data-lightbox] with data-full opens it.
 ---
 <div class="lb" data-lb hidden aria-hidden="true">
   <button class="lb-backdrop" data-lb-close aria-label="Close"></button>
@@ -7,11 +7,14 @@
     <button class="lb-close" data-lb-close aria-label="Close viewer">✕</button>
     <button class="lb-nav prev" data-lb-prev aria-label="Previous">‹</button>
     <figure class="lb-fig">
-      <img class="lb-img" data-lb-img alt="" />
+      <div class="lb-stage" data-lb-stage>
+        <img class="lb-img" data-lb-img alt="" draggable="false" />
+      </div>
       <figcaption class="lb-cap">
         <span class="lb-idx mono" data-lb-idx></span>
         <span class="lb-text" data-lb-text></span>
         <a class="lb-dl mono" data-lb-dl download>↓ Download</a>
+        <span class="lb-hint mono" data-lb-hint>scroll / double-click to zoom</span>
       </figcaption>
     </figure>
     <button class="lb-nav next" data-lb-next aria-label="Next">›</button>
@@ -28,12 +31,18 @@
   @keyframes lbpop { from { opacity: 0; transform: scale(.97); } }
 
   .lb-fig { margin: 0; display: flex; flex-direction: column; align-items: center; min-width: 0; }
-  .lb-img { max-width: 100%; max-height: 78vh; width: auto; object-fit: contain; background: var(--paper); border: 1.5px solid #000; }
-  .lb-cap { display: flex; align-items: baseline; gap: .9rem; margin-top: .9rem; color: var(--paper); max-width: 70ch; text-align: center; }
+  .lb-stage { max-width: 100%; max-height: 78vh; overflow: hidden; border: 1.5px solid #000; background: var(--paper); display: grid; place-items: center; touch-action: none; }
+  .lb-img { max-width: min(92vw, 1160px); max-height: 78vh; width: auto; object-fit: contain; display: block; transform-origin: 0 0; transform: translate(0,0) scale(1); cursor: zoom-in; user-select: none; -webkit-user-drag: none; }
+  .lb-img.zoomed { cursor: grab; }
+  .lb-img.grabbing { cursor: grabbing; transition: none !important; }
+  .lb-img.anim { transition: transform .18s var(--ease); }
+
+  .lb-cap { display: flex; align-items: baseline; gap: .9rem; margin-top: .9rem; color: var(--paper); max-width: 70ch; text-align: center; flex-wrap: wrap; justify-content: center; }
   .lb-idx { font-size: .82rem; color: #7d8cff; font-weight: 700; }
   .lb-text { font-size: .96rem; line-height: 1.5; }
   .lb-dl { font-size: .68rem; color: var(--ink); background: var(--paper); padding: 4px 10px; letter-spacing: .04em; white-space: nowrap; transition: background .2s, color .2s; }
   .lb-dl:hover { background: #7d8cff; color: var(--paper); }
+  .lb-hint { font-size: .58rem; color: rgba(255,255,255,.5); letter-spacing: .05em; }
 
   .lb-close { position: absolute; top: -2.6rem; right: 0; z-index: 2; width: 38px; height: 38px; border: 1.5px solid var(--paper); background: transparent; color: var(--paper); font-size: 1rem; transition: background .2s, color .2s; }
   .lb-close:hover { background: var(--paper); color: var(--ink); }
@@ -45,7 +54,7 @@
     .lb-inner { grid-template-columns: 1fr; }
     .lb-nav { position: absolute; top: 50%; transform: translateY(-50%); z-index: 3; }
     .lb-nav.prev { left: 4px; } .lb-nav.next { right: 4px; }
-    .lb-img { max-height: 68vh; }
+    .lb-stage { max-height: 68vh; } .lb-img { max-height: 68vh; }
     .lb-cap { flex-direction: column; gap: .3rem; }
   }
 </style>
@@ -60,60 +69,119 @@
     const nextBtn = lb.querySelector('[data-lb-next]') as HTMLElement;
     const dlEl = lb.querySelector('[data-lb-dl]') as HTMLAnchorElement;
 
-    let items: { full: string; caption: string; idx: string; dl: string }[] = [];
+    type Item = { full: string; caption: string; idx: string; dl: string };
+    let items: Item[] = [];
     let cur = 0;
+
+    // zoom/pan state
+    let s = 1, tx = 0, ty = 0;
+    const MAX = 5, MIN = 1;
+    const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
+    function apply() {
+      img.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`;
+      img.classList.toggle('zoomed', s > 1.01);
+    }
+    function resetZoom() { s = 1; tx = 0; ty = 0; img.classList.remove('anim'); apply(); }
+    function zoomAt(clientX: number, clientY: number, factor: number) {
+      const rect = img.getBoundingClientRect();
+      const baseLeft = rect.left - tx, baseTop = rect.top - ty;
+      const px = (clientX - baseLeft - tx) / s;
+      const py = (clientY - baseTop - ty) / s;
+      const s2 = clamp(s * factor, MIN, MAX);
+      if (s2 === s) return;
+      tx = clientX - baseLeft - s2 * px;
+      ty = clientY - baseTop - s2 * py;
+      s = s2;
+      if (s <= 1.001) { s = 1; tx = 0; ty = 0; }
+      apply();
+    }
 
     function render() {
       const it = items[cur];
       if (!it) return;
+      resetZoom();
       img.src = it.full; img.alt = it.caption || '';
       idxEl.textContent = it.idx || '';
       textEl.textContent = it.caption || '';
-      if (dlEl) {
-        const href = it.dl || it.full;
-        dlEl.href = href;
-        dlEl.textContent = it.dl ? '↓ Download file' : '↓ Download image';
-      }
+      if (dlEl) { dlEl.href = it.dl || it.full; dlEl.textContent = it.dl ? '↓ Download file' : '↓ Download image'; }
       const multi = items.length > 1;
       prevBtn.style.visibility = multi ? 'visible' : 'hidden';
       nextBtn.style.visibility = multi ? 'visible' : 'hidden';
     }
-    function open(list: typeof items, start: number) {
+    function open(list: Item[], start: number) {
       items = list; cur = start;
       lb.hidden = false; lb.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
       render();
     }
-    function close() {
-      lb.hidden = true; lb.setAttribute('aria-hidden', 'true');
-      document.body.style.overflow = '';
-    }
+    function close() { lb.hidden = true; lb.setAttribute('aria-hidden', 'true'); document.body.style.overflow = ''; }
     function step(d: number) { cur = (cur + d + items.length) % items.length; render(); }
 
-    // gather all plate groups on the page
     document.querySelectorAll<HTMLElement>('[data-lightbox]').forEach((el) => {
       el.addEventListener('click', (e) => {
         e.preventDefault();
         const group = el.getAttribute('data-lb-group') || 'default';
         const groupEls = Array.from(document.querySelectorAll<HTMLElement>(`[data-lightbox][data-lb-group="${group}"]`));
         const list = groupEls.map((g) => ({
-          full: g.getAttribute('data-full') || '',
-          caption: g.getAttribute('data-caption') || '',
-          idx: g.getAttribute('data-idx') || '',
-          dl: g.getAttribute('data-dl') || '',
+          full: g.getAttribute('data-full') || '', caption: g.getAttribute('data-caption') || '',
+          idx: g.getAttribute('data-idx') || '', dl: g.getAttribute('data-dl') || '',
         }));
         open(list, groupEls.indexOf(el));
       });
     });
 
     lb.querySelectorAll('[data-lb-close]').forEach((b) => b.addEventListener('click', close));
-    prevBtn.addEventListener('click', () => step(-1));
-    nextBtn.addEventListener('click', () => step(1));
+    prevBtn.addEventListener('click', (e) => { e.stopPropagation(); step(-1); });
+    nextBtn.addEventListener('click', (e) => { e.stopPropagation(); step(1); });
     document.addEventListener('keydown', (e) => {
       if (lb.hidden) return;
       if (e.key === 'Escape') close();
       if (e.key === 'ArrowLeft') step(-1);
       if (e.key === 'ArrowRight') step(1);
     });
+
+    // wheel zoom (toward cursor)
+    img.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      img.classList.add('anim');
+      zoomAt(e.clientX, e.clientY, e.deltaY < 0 ? 1.18 : 1 / 1.18);
+    }, { passive: false });
+
+    // double-click toggle
+    img.addEventListener('dblclick', (e) => {
+      e.preventDefault();
+      img.classList.add('anim');
+      if (s > 1.01) resetZoom(); else zoomAt(e.clientX, e.clientY, 2.6);
+    });
+
+    // pointer drag to pan + pinch to zoom
+    const pointers = new Map<number, { x: number; y: number }>();
+    let lastDist = 0, panning = false, px0 = 0, py0 = 0, tx0 = 0, ty0 = 0;
+    img.addEventListener('pointerdown', (e) => {
+      img.setPointerCapture(e.pointerId);
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      img.classList.remove('anim');
+      if (pointers.size === 1 && s > 1.01) { panning = true; px0 = e.clientX; py0 = e.clientY; tx0 = tx; ty0 = ty; img.classList.add('grabbing'); }
+      if (pointers.size === 2) { const p = [...pointers.values()]; lastDist = Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y); panning = false; }
+    });
+    img.addEventListener('pointermove', (e) => {
+      if (!pointers.has(e.pointerId)) return;
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pointers.size === 2) {
+        const p = [...pointers.values()];
+        const dist = Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y);
+        if (lastDist > 0) zoomAt((p[0].x + p[1].x) / 2, (p[0].y + p[1].y) / 2, dist / lastDist);
+        lastDist = dist;
+      } else if (panning) {
+        tx = tx0 + (e.clientX - px0); ty = ty0 + (e.clientY - py0); apply();
+      }
+    });
+    function up(e: PointerEvent) {
+      pointers.delete(e.pointerId);
+      if (pointers.size < 2) lastDist = 0;
+      if (pointers.size === 0) { panning = false; img.classList.remove('grabbing'); }
+    }
+    img.addEventListener('pointerup', up);
+    img.addEventListener('pointercancel', up);
   }
 </script>

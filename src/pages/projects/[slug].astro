@@ -3,6 +3,7 @@ import { Image, getImage } from 'astro:assets';
 import Base from '../../layouts/Base.astro';
 import StlViewer from '../../components/StlViewer.astro';
 import PdfPager from '../../components/PdfPager.astro';
+import GalleryPager from '../../components/GalleryPager.astro';
 import Lightbox from '../../components/Lightbox.astro';
 import { projects, pic, pics } from '../../data/projects.js';
 
@@ -34,6 +35,15 @@ const prototypes = await Promise.all((p.prototypes || []).map(async (pr) => ({
   ...pr,
   photoFull: pr.photo ? (await getImage({ src: pic(pr.photo), width: 1400, format: 'webp' })).src : '',
 })));
+const gallery = await Promise.all((p.gallery || []).map(async (g) => {
+  const meta = pic(g.img);
+  return {
+    src: meta ? (await getImage({ src: meta, width: 1200, format: 'webp' })).src : '',
+    full: meta ? (await getImage({ src: meta, width: 1600, format: 'webp' })).src : '',
+    title: g.title, desc: g.desc, alt: g.title,
+    dl: g.download ? pub('downloads/' + g.download) : '',
+  };
+}));
 const heroImg = p.hero ? pic(p.hero) : null;
 const pdfPages = p.pdfPages ? pics(...p.pdfPages) : [];
 const hasProcess = process.length > 0;
@@ -59,6 +69,7 @@ const hasProcess = process.length > 0;
     <!-- hero -->
     <div class="wrap dt-hero-wrap">
       {p.heroType === 'pdf' && <PdfPager pages={pdfPages} label="RŪI tech pack" group="rui-pdf" />}
+      {p.heroType === 'gallery' && <GalleryPager items={gallery} label={p.title} group="gal" fit={p.galleryFit || 'contain'} />}
       {p.heroType === '3d' && (
         <div class="dt-3d">
           <StlViewer models={p.models} poster={p.hero} label={p.title} />
@@ -68,6 +79,7 @@ const hasProcess = process.length > 0;
               <a class="btn" href={pub('downloads/' + p.download)} download>↓ Print-ready parts (.zip)</a>
             </div>
           )}
+          {p.downloadNote && <p class="dt-3d-note mono">{p.downloadNote}</p>}
         </div>
       )}
       {(p.heroType === 'image' || p.heroType === 'fitted') && heroImg && (
@@ -231,6 +243,7 @@ const hasProcess = process.length > 0;
   .dt-hero-tag { position: absolute; bottom: 10px; left: 12px; font-size: .58rem; color: var(--graphite); background: color-mix(in srgb, var(--paper) 72%, transparent); padding: 2px 7px; }
   .dt-3d-bar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-top: .8rem; }
   .dt-3d-bar .mono { font-size: .62rem; color: var(--faint); }
+  .dt-3d-note { font-size: .68rem; color: var(--graphite); margin: .6rem 0 0; padding: .5rem .7rem; border-left: 2px solid var(--blue); background: var(--paper-2); }
 
   .dt-body { display: grid; grid-template-columns: 1.55fr 1fr; gap: clamp(1.6rem, 4vw, 3.4rem); align-items: start; margin-bottom: 3rem; }
   .dt-summary { min-width: 0; }

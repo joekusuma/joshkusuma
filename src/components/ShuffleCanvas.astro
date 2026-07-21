@@ -33,10 +33,9 @@ const { slides } = Astro.props; // [{ img, title, discipline, blurb, href, index
         <span class="cap-blurb" data-cap-blurb>{slides[0].blurb}</span>
       </div>
     </div>
-    <div class="dots" role="tablist" aria-label="Preview slides">
-      {slides.map((_, i) => (
-        <button class={`dot${i === 0 ? ' on' : ''}`} data-dot={i} aria-label={`Show preview ${i + 1}`}></button>
-      ))}
+    <div class="cap-foot">
+      <span class="cap-count mono" data-cap-count>{`01 / ${String(slides.length).padStart(2, '0')}`}</span>
+      <span class="cap-auto mono">▸ auto · {slides.length} designs</span>
     </div>
   </figcaption>
 </figure>
@@ -69,44 +68,43 @@ const { slides } = Astro.props; // [{ img, title, discipline, blurb, href, index
   .cap-title { font-size: 1.12rem; font-weight: 800; letter-spacing: -.01em; line-height: 1.1; }
   .cap-blurb { font-size: .82rem; color: var(--graphite); line-height: 1.45; max-width: 46ch; }
 
-  .dots { display: flex; gap: 7px; margin-top: .8rem; }
-  .dot { width: 22px; height: 3px; background: var(--line-2); border: 0; padding: 0; transition: background .2s; }
-  .dot.on { background: var(--ink); }
-  .dot:hover { background: var(--blue); }
+  .cap-foot { display: flex; justify-content: space-between; align-items: center; margin-top: .85rem; gap: 1rem; }
+  .cap-count { font-size: .7rem; color: var(--ink); font-weight: 700; }
+  .cap-auto { font-size: .58rem; color: var(--faint); letter-spacing: .05em; }
 </style>
 
 <script>
   function initShuffle(root: HTMLElement) {
     const slides = Array.from(root.querySelectorAll<HTMLElement>('.slide'));
-    const dots = Array.from(root.querySelectorAll<HTMLButtonElement>('.dot'));
     const capIndex = root.querySelector<HTMLElement>('[data-cap-index]');
     const capDisc = root.querySelector<HTMLElement>('[data-cap-disc]');
     const capTitle = root.querySelector<HTMLElement>('[data-cap-title]');
     const capBlurb = root.querySelector<HTMLElement>('[data-cap-blurb]');
+    const capCount = root.querySelector<HTMLElement>('[data-cap-count]');
+    const total = slides.length;
     let i = 0;
     let timer: number | undefined;
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     function show(n: number) {
-      i = (n + slides.length) % slides.length;
+      i = (n + total) % total;
       slides.forEach((s, k) => {
         const on = k === i;
         s.classList.toggle('on', on);
         s.setAttribute('aria-hidden', on ? 'false' : 'true');
         s.tabIndex = on ? 0 : -1;
       });
-      dots.forEach((d, k) => d.classList.toggle('on', k === i));
       const el = slides[i];
       if (capIndex) capIndex.textContent = el.dataset.index || '';
       if (capDisc) capDisc.textContent = el.dataset.discipline || '';
       if (capTitle) capTitle.textContent = el.dataset.title || '';
       if (capBlurb) capBlurb.textContent = el.dataset.blurb || '';
+      if (capCount) capCount.textContent = `${String(i + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}`;
     }
     function next() { show(i + 1); }
     function start() { if (!reduce) { stop(); timer = window.setInterval(next, 3600); } }
     function stop() { if (timer) window.clearInterval(timer); }
 
-    dots.forEach((d) => d.addEventListener('click', () => { show(Number(d.dataset.dot)); start(); }));
     root.addEventListener('mouseenter', stop);
     root.addEventListener('mouseleave', start);
     root.addEventListener('focusin', stop);

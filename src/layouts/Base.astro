@@ -3,6 +3,8 @@ import '@fontsource-variable/work-sans';
 import '@fontsource-variable/jetbrains-mono';
 import '../styles/global.css';
 import Nav from '../components/Nav.astro';
+import { Image } from 'astro:assets';
+import axiomLogo from '../assets/axiom-logo.webp';
 
 const { title, description = 'Josh Bennett Kusuma — design portfolio. Fashion, brand, editorial, industrial and 3D work.', current = '' } = Astro.props;
 const full = title ? `${title} · Josh Bennett Kusuma` : 'Josh Bennett Kusuma · Design Journey';
@@ -44,7 +46,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
       <footer class="foot">
         <div class="wrap foot-in">
           <div class="foot-brand">
-            <span class="foot-mark">◺ AXIOM</span>
+            <Image class="foot-logo" src={axiomLogo} alt="AXIOM" widths={[180, 360]} sizes="150px" />
             <p class="mono">Josh Bennett Kusuma — designer, JC1 · SIS Semarang.<br/>Curating the world’s aesthetics for the local scene.</p>
           </div>
           <nav class="foot-nav" aria-label="Footer">
@@ -83,6 +85,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
       @media (max-width: 860px) { .foot { padding-bottom: 4.6rem; } }
       .foot-in { display: grid; grid-template-columns: 1.6fr 1fr 1fr; gap: 2rem; align-items: start; }
       .foot-mark { font-weight: 800; letter-spacing: .04em; font-size: 1.05rem; }
+      .foot-logo { width: 140px; height: auto; display: block; }
       .foot-brand p { color: var(--graphite); font-size: .78rem; margin: .7rem 0 0; line-height: 1.7; }
       .foot-nav { display: flex; flex-direction: column; gap: .5rem; font-family: var(--font-mono); font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; }
       .foot-nav a { color: var(--ink); width: fit-content; border-bottom: 1px solid transparent; transition: border-color .2s; }

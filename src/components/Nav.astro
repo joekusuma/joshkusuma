@@ -1,4 +1,6 @@
 ---
+import { Image } from 'astro:assets';
+import axiomLogo from '../assets/axiom-logo.webp';
 const { current = '' } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const items = [
@@ -12,7 +14,7 @@ const items = [
 ---
 <nav class="rail" aria-label="Primary">
   <a class="rail-home" href={`${base}/`} aria-label="Home — Josh Bennett Kusuma">
-    <span class="mark">◺</span><span class="mark-t mono">AXIOM</span>
+    <Image class="rail-logo" src={axiomLogo} alt="AXIOM" widths={[120, 240]} sizes="58px" />
   </a>
   <span class="rail-line" aria-hidden="true"></span>
   <ul class="rail-list">
@@ -58,6 +60,8 @@ const items = [
     border-right: 1px solid var(--line-2);
   }
   .rail-home { display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; }
+  .rail-logo { width: 58px; height: auto; display: block; transition: opacity .2s var(--ease); }
+  .rail-home:hover .rail-logo { opacity: .6; }
   .mark { font-size: 1.4rem; line-height: 1; color: var(--ink); transform: translateY(1px); }
   .mark-t { font-size: .52rem; letter-spacing: .18em; color: var(--graphite); }
   .rail-line { flex: 0 0 auto; width: 1px; height: 34px; background: var(--line-2); margin: 16px 0; }
@@ -96,6 +100,7 @@ const items = [
       justify-content: space-between; align-items: center;
     }
     .rail-home { flex-direction: row; gap: 6px; padding-left: 14px; }
+    .rail-logo { width: 52px; }
     .mark { font-size: 1.15rem; }
     .mark-t { font-size: .6rem; }
     .rail-line, .rail-coord { display: none; }

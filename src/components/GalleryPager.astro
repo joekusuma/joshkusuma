@@ -1,0 +1,85 @@
+---
+// Main-display image gallery with left/right arrows. The caption + description
+// change to match the current image. Each slide opens the zoomable lightbox.
+// Props: items = [{ src, full, title, desc, alt?, dl? }], label, group, fit
+const { items = [], label = '', group = 'gal', fit = 'contain' } = Astro.props;
+---
+<div class="gp" data-gp>
+  <div class={`gp-stage fit-${fit}`}>
+    <button class="gp-arrow prev" data-gp-prev aria-label="Previous">‹</button>
+    <div class="gp-frame">
+      {items.map((it, i) => (
+        <button
+          class="gp-slide" data-gp-slide data-desc={it.desc}
+          data-lightbox data-lb-group={group} data-full={it.full} data-caption={it.title} data-idx={String(i + 1).padStart(2, '0')} data-dl={it.dl || ''}
+          style={i === 0 ? '' : 'display:none'} aria-label={`Open: ${it.title}`}
+        >
+          <img src={it.src} alt={it.alt || it.title} />
+          <span class="gp-zoom" aria-hidden="true">⤢</span>
+        </button>
+      ))}
+    </div>
+    <button class="gp-arrow next" data-gp-next aria-label="Next">›</button>
+    <span class="gp-counter mono" data-gp-counter>{`01 / ${String(items.length).padStart(2, '0')}`}</span>
+    {label && <span class="gp-label mono">{label.toUpperCase()}</span>}
+  </div>
+  <div class="gp-cap">
+    <div class="gp-cap-head"><span class="gp-n mono" data-gp-n>01</span><strong data-gp-title>{items[0]?.title}</strong></div>
+    <p class="gp-desc" data-gp-desc>{items[0]?.desc}</p>
+  </div>
+</div>
+
+<style>
+  .gp { margin: 0; }
+  .gp-stage { position: relative; border: 1.5px solid var(--ink); background: radial-gradient(120% 120% at 50% 15%, #fff, var(--paper-2)); display: grid; place-items: center; min-height: 320px; }
+  .gp-stage.fit-contain { padding: clamp(1rem, 3vw, 2.2rem); }
+  .gp-frame { width: 100%; display: grid; place-items: center; }
+  .gp-slide { padding: 0; border: 0; background: none; cursor: zoom-in; position: relative; max-width: 100%; }
+  .gp-stage.fit-contain .gp-slide img { max-height: 62vh; width: auto; max-width: 100%; object-fit: contain; }
+  .gp-stage.fit-cover { aspect-ratio: 16 / 10; }
+  .gp-stage.fit-cover .gp-slide, .gp-stage.fit-cover .gp-frame { width: 100%; height: 100%; }
+  .gp-stage.fit-cover .gp-slide img { width: 100%; height: 100%; object-fit: cover; }
+  .gp-zoom { position: absolute; top: 8px; right: 10px; font-size: 1rem; color: var(--ink); background: color-mix(in srgb, var(--paper) 74%, transparent); width: 26px; height: 26px; display: grid; place-items: center; opacity: 0; transition: opacity .2s; }
+  .gp-slide:hover .gp-zoom { opacity: 1; }
+
+  .gp-arrow { position: absolute; top: 50%; transform: translateY(-50%); z-index: 4; width: 44px; height: 44px; border: 1.5px solid var(--ink); background: color-mix(in srgb, var(--paper) 86%, transparent); color: var(--ink); font-size: 1.7rem; line-height: 1; display: grid; place-items: center; transition: background .2s, color .2s; }
+  .gp-arrow:hover { background: var(--ink); color: var(--paper); }
+  .gp-arrow.prev { left: 10px; } .gp-arrow.next { right: 10px; }
+  .gp-counter { position: absolute; bottom: 10px; right: 12px; font-size: .62rem; color: var(--graphite); background: color-mix(in srgb, var(--paper) 74%, transparent); padding: 2px 7px; }
+  .gp-label { position: absolute; bottom: 10px; left: 12px; font-size: .58rem; color: var(--graphite); background: color-mix(in srgb, var(--paper) 74%, transparent); padding: 2px 7px; }
+
+  .gp-cap { border: 1.5px solid var(--line-2); border-top: 0; padding: 1.1rem 1.2rem; }
+  .gp-cap-head { display: flex; align-items: center; gap: .7rem; margin-bottom: .45rem; }
+  .gp-n { font-size: .66rem; color: var(--paper); background: var(--blue); padding: 2px 7px; }
+  .gp-cap-head strong { font-size: 1.1rem; font-weight: 800; letter-spacing: -.015em; }
+  .gp-desc { font-size: .98rem; line-height: 1.65; color: var(--ink-soft); margin: 0; max-width: 74ch; }
+
+  @media (max-width: 620px) {
+    .gp-arrow { width: 38px; height: 38px; font-size: 1.4rem; }
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-gp]').forEach((gp) => {
+    const slides = Array.from(gp.querySelectorAll<HTMLElement>('[data-gp-slide]'));
+    if (!slides.length) return;
+    const titleEl = gp.querySelector('[data-gp-title]') as HTMLElement;
+    const descEl = gp.querySelector('[data-gp-desc]') as HTMLElement;
+    const nEl = gp.querySelector('[data-gp-n]') as HTMLElement;
+    const counterEl = gp.querySelector('[data-gp-counter]') as HTMLElement;
+    const total = slides.length;
+    let i = 0;
+    function show(n: number) {
+      i = (n + total) % total;
+      slides.forEach((s, k) => { s.style.display = k === i ? '' : 'none'; });
+      const s = slides[i];
+      titleEl.textContent = s.getAttribute('data-caption') || '';
+      descEl.textContent = s.getAttribute('data-desc') || '';
+      const idx = String(i + 1).padStart(2, '0');
+      nEl.textContent = idx;
+      counterEl.textContent = `${idx} / ${String(total).padStart(2, '0')}`;
+    }
+    gp.querySelector('[data-gp-prev]')?.addEventListener('click', (e) => { e.stopPropagation(); show(i - 1); });
+    gp.querySelector('[data-gp-next]')?.addEventListener('click', (e) => { e.stopPropagation(); show(i + 1); });
+  });
+</script>

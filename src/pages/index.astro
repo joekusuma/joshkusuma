@@ -3,27 +3,28 @@ import { Image } from 'astro:assets';
 import Base from '../layouts/Base.astro';
 import ShuffleCanvas from '../components/ShuffleCanvas.astro';
 import { projects, featured, pic } from '../data/projects.js';
+import axiomLogo from '../assets/axiom-logo.webp';
+import axiomBanner from '../assets/axiom-vert-banner.webp';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
-const slides = featured.map((p) => ({
-  img: pic(p.hero),
-  title: p.title,
-  discipline: p.disciplineLabel,
-  blurb: p.blurb,
-  href: `${base}/projects/${p.slug}`,
-  index: p.index,
-}));
-
-// canvas-spanning gallery tiles (varied sizes)
-const tiles = [
-  { area: 'rui',  slug: 'rui-clothing',  img: 'rui-black',                 fit: 'cover',   label: 'RŪI' },
-  { area: 'tok',  slug: 'tokyo-shibuya', img: 'tokyo-shibuya',             fit: 'cover',   label: 'Shibuya' },
-  { area: 'mat',  slug: 'matchaholic',   img: 'matcha-final-nobg',             fit: 'cover',   label: 'Matchaholic' },
-  { area: 'wild', slug: 'wildstyle',     img: 'wildstyle-axiom-grey',      fit: 'cover',   label: 'AXIOM' },
-  { area: 'tent', slug: 'tentacle-arm',  img: 'tentacle-desc1',         fit: 'contain', label: 'Tentacle' },
-  { area: 'man',  slug: 'digital-drawings', img: 'mandala',               fit: 'contain', label: 'Drawings' },
-];
+// sneak preview = ALL designs across every project, shuffled
+const allDesigns = [];
+const seen = new Set();
+for (const p of projects) {
+  const push = (key, title) => {
+    const im = pic(key);
+    if (im && !seen.has(key)) { seen.add(key); allDesigns.push({ img: im, title: title || p.title, discipline: p.disciplineLabel, blurb: p.blurb, href: `${base}/projects/${p.slug}`, index: p.index }); }
+  };
+  push(p.hero);
+  (p.plates || []).forEach((pl) => pl.img && push(pl.img, p.title));
+  (p.gallery || []).forEach((g) => g.img && push(g.img, p.title));
+}
+// shuffle
+const slides = allDesigns
+  .map((v) => ({ v, r: Math.random() }))
+  .sort((a, b) => a.r - b.r)
+  .map(({ v }) => v);
 ---
 <Base current="" title="Design Journey">
   <!-- ============ HERO / WIREFRAME ============ -->
@@ -39,12 +40,14 @@ const tiles = [
         <!-- LEFT: masthead + poem + preview -->
         <div class="col-left">
           <header class="masthead">
+            <a class="brand-logo" href={`${base}/about`} aria-label="AXIOM — Josh Bennett Kusuma">
+              <Image src={axiomLogo} alt="AXIOM" widths={[220, 440]} sizes="200px" />
+            </a>
             <h1>My Design<br/>Journey</h1>
             <p class="byline">— by Josh Bennett Kusuma</p>
           </header>
 
           <div class="poem" data-poem>
-            <span class="poem-fraction mono" aria-hidden="true">¾</span>
             <p class="poem-lead">
               <span class="curio">Curiosity…</span>
               <span class="curio-q">what exactly is curiosity?</span>
@@ -60,11 +63,10 @@ const tiles = [
               Perhaps it is the connection between a spark grown,<br/>
               and a bold choice.
             </p>
-            <span class="poem-unit mono" aria-hidden="true">1 : 1</span>
           </div>
 
           <div class="preview-block">
-            <span class="preview-lead label-blue"><span class="lead-dash"></span>Sneak preview — shuffles on its own</span>
+            <span class="preview-lead label-blue"><span class="lead-dash"></span>Sneak preview — every design, shuffled</span>
             <ShuffleCanvas slides={slides} />
           </div>
         </div>
@@ -72,21 +74,11 @@ const tiles = [
         <!-- divider = the half border boxes must not cross -->
         <div class="divider" aria-hidden="true"><span class="div-tag mono">½</span></div>
 
-        <!-- RIGHT: canvas-spanning gallery -->
+        <!-- RIGHT: AXIOM vertical banner -->
         <div class="col-right">
-          <div class="gal-head">
-            <span class="label-blue"><span class="lead-dash"></span>Selected work — canvas spanning</span>
-            <span class="tick">{projects.length} PROJECTS</span>
-          </div>
-          <div class="gallery">
-            {tiles.map((t) => (
-              <a class={`gtile a-${t.area} fit-${t.fit}`} href={`${base}/projects/${t.slug}`} aria-label={t.label}>
-                <Image src={pic(t.img)} alt={t.label} widths={[300, 600]} sizes="(max-width:860px) 45vw, 22vw" />
-                <span class="gtile-tag mono">{t.label}</span>
-                <span class="gtile-plus" aria-hidden="true">↗</span>
-              </a>
-            ))}
-          </div>
+          <a class="vbanner" href={`${base}/projects`} aria-label="View all projects">
+            <Image src={axiomBanner} alt="AXIOM" widths={[460, 919]} sizes="(max-width:860px) 92vw, 44vw" />
+          </a>
         </div>
       </div>
     </div>
@@ -121,9 +113,12 @@ const tiles = [
   /* masthead */
   .masthead h1 { font-size: clamp(2.9rem, 7.4vw, 6rem); font-weight: 900; letter-spacing: -.035em; line-height: .92; }
   .byline { font-weight: 200; font-style: italic; font-size: clamp(1rem, 2.2vw, 1.35rem); color: var(--ink-soft); margin: .7rem 0 0; letter-spacing: .01em; }
+  .brand-logo { display: block; width: clamp(140px, 22vw, 200px); margin-bottom: 1.1rem; }
+  .brand-logo img { width: 100%; height: auto; display: block; transition: opacity .2s; }
+  .brand-logo:hover img { opacity: .62; }
 
   /* poem */
-  .poem { position: relative; margin: clamp(1.6rem, 3.4vw, 2.6rem) 0; padding: 1.5rem 1.6rem 1.7rem; border: 1.5px dashed var(--red); }
+  .poem { position: relative; margin: clamp(1.6rem, 3.4vw, 2.6rem) 0; padding: 1.4rem 0 1.2rem; }
   .poem-fraction { position: absolute; top: -.7rem; left: 1.2rem; background: var(--paper); padding: 0 .4rem; color: var(--blue); font-size: .8rem; }
   .poem-unit { position: absolute; bottom: -.7rem; right: 1.2rem; background: var(--paper); padding: 0 .4rem; color: var(--blue); font-size: .72rem; }
   .poem-lead { margin: 0 0 .8rem; line-height: 1; }
@@ -140,23 +135,10 @@ const tiles = [
   .div-tag { position: absolute; top: 40%; left: 50%; transform: translate(-50%,-50%); background: var(--paper); color: var(--red); padding: 3px 2px; font-size: .68rem; writing-mode: vertical-rl; }
 
   /* right column */
-  .col-right { position: sticky; top: 22px; }
-  .gal-head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
-
-  .gallery {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-auto-rows: 1fr;
-    grid-template-areas:
-      "rui  rui  tok"
-      "rui  rui  tok"
-      "mat  wild tok"
-      "tent wild man";
-    gap: 8px;
-    aspect-ratio: 3 / 4;
-  }
-  .a-rui { grid-area: rui; } .a-tok { grid-area: tok; } .a-mat { grid-area: mat; }
-  .a-wild { grid-area: wild; } .a-tent { grid-area: tent; } .a-man { grid-area: man; }
+  .col-right { position: static; align-self: stretch; display: flex; align-items: center; }
+  .vbanner { display: block; border: 1.5px solid var(--ink); overflow: hidden; line-height: 0; width: 100%; }
+  .vbanner img { width: 100%; height: auto; display: block; transition: transform .5s var(--ease); }
+  .vbanner:hover img { transform: scale(1.02); }
 
   .gtile { position: relative; overflow: hidden; border: 1.5px solid var(--ink); background: var(--paper-2); display: block; }
   .gtile img { width: 100%; height: 100%; }

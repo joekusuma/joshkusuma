@@ -55,7 +55,7 @@ export const projects = [
     tagline: 'One cat, a whole café brand',
     discipline: 'brand', disciplineLabel: 'Brand Identity / Illustration',
     kind: 'Mascot · logo · packaging · campaign', year: '2025',
-    tools: ['Procreate', 'Illustrator', 'Photoshop'],
+    tools: ['Procreate', 'Illustrator'],
     heroType: 'image', hero: 'matcha-final-nobg', heroFit: 'contain', featured: true,
     blurb: 'A contented ginger cat and its oversized bowl of matcha, stretched into a full drink-brand identity.',
     summary: [
@@ -64,8 +64,8 @@ export const projects = [
     ],
     briefPhotos: [
       { img: 'matcha-brief1', caption: 'Matchaholic — live at the Business Fair' },
-      { img: 'matcha-brief2', caption: 'The Matchaholic stand' },
-      { img: 'matcha-brief3', caption: 'The team' },
+      { img: 'matcha-brief2', caption: 'The team' },
+      { img: 'matcha-brief3', caption: 'The product' },
     ],
     process: [
       { img: 'matcha-proto1',  step: '01', label: 'First prototype', sub: '1st prototype of the logo' },
@@ -82,8 +82,8 @@ export const projects = [
       { img: 'matcha-final',   caption: 'Final logo design' },
       { img: 'matcha-banner2', caption: 'Banner design 2' },
       { img: 'matcha-brief1',  caption: 'Business Fair — the stand' },
-      { img: 'matcha-brief2',  caption: 'Business Fair — serving' },
-      { img: 'matcha-brief3',  caption: 'Business Fair — the team' },
+      { img: 'matcha-brief2',  caption: 'The team' },
+      { img: 'matcha-brief3',  caption: 'The product' },
     ],
     specs: [
       ['Assets', 'Mascot · logo · packaging · banners'],
@@ -99,7 +99,16 @@ export const projects = [
     discipline: 'editorial', disciplineLabel: 'Typography & Graphic Design',
     kind: 'Editorial spread', year: '2026',
     tools: ['Illustrator'],
-    heroType: 'image', hero: 'tokyo-shibuya', heroFit: 'contain', featured: true,
+    heroType: 'gallery', hero: 'tokyo-shibuya', heroFit: 'contain', galleryFit: 'contain', featured: true,
+    gallery: [
+      { img: 'tokyo-shibuya', title: 'Screens Glow, Footsteps Sync', desc: 'The Shibuya editorial spread — a hard modular grid, oversized display type cut with diagonals, and vertical Japanese type. 渋谷は光を吸い込み、動きを吐き出す街 — the city that inhales light and exhales motion.' },
+      { img: 'lj-1', title: 'Learning Journey — Waseda', desc: 'The Tokyo learning-journey booklet opens at Waseda University — the engineering buildings, framed for their modern architecture and research-driven environment.' },
+      { img: 'lj-2', title: 'Nishi-Waseda — Ideas in Motion', desc: '“Ideas in motion.” The Nishi-Waseda campus, with vertical Japanese type echoing the Shibuya piece — motion pulled through architecture.' },
+      { img: 'lj-3', title: 'Nishi-Waseda — Discipline & Innovation', desc: 'A campus shaped by discipline, theory, and innovation (規律と理論、革新によって形作られたキャンパス) — type and photo locked to a single grid.' },
+      { img: 'lj-4', title: 'Keio University — Dormitories', desc: 'Keio University dormitories. The vertical KEIO masthead runs the page while the photography carries quiet campus life.' },
+      { img: 'lj-5', title: 'Keio University', desc: 'Keio University — the wordmark deconstructed down the page, continuing the vertical-type system across the booklet.' },
+      { img: 'lj-6', title: 'A Quiet Neighborhood', desc: 'The closing frame: “a quiet academic neighborhood within the pulse of the city.”' },
+    ],
     blurb: 'An editorial spread from a learning journey to Tokyo — hard grid, monospace, vertical Japanese type.',
     summary: [
       'A piece of typography and graphic design produced from a learning journey to Tokyo. Shibuya is treated as a typographic system: a hard modular grid, oversized “TOKYO / SHIBUYA” display cut through with diagonal rules, monospaced body columns, and vertical Japanese type running the margins.',
@@ -122,13 +131,18 @@ export const projects = [
     discipline: 'editorial', disciplineLabel: 'Digital Graffiti',
     kind: 'Lettering series', year: '2026',
     tools: ['Procreate'],
-    heroType: 'fitted', hero: 'wildstyle-axiom-grey', heroFit: 'contain', featured: true,
+    heroType: 'gallery', hero: 'wildstyle-axiom-grey', heroFit: 'contain', galleryFit: 'contain', featured: true,
+    gallery: [
+      { img: 'wildstyle-axiom-grey', title: 'AXIOM', desc: 'The AXIOM wildstyle piece in graphite — interlocking arrows, bar extensions, and forced perspective, engineered to read almost illegible then snap into place once you find the structure.', download: 'wildstyle-axiom.png' },
+      { img: 'wildstyle-josh-grey', title: 'JOSH', desc: 'The same structural system pushed into a second tag, “JOSH” — depth, weight, and negative space controlled entirely by hand.' },
+    ],
     blurb: 'An ongoing wildstyle study under the tag AXIOM — interlocking arrows, forced perspective, illegible-then-resolved.',
     summary: [
       'An ongoing study in wildstyle lettering under the tag AXIOM (@theaxiom.one). The letterforms are engineered like architecture — interlocking arrows, bar extensions, and forced perspective that reads almost illegible on purpose, then snaps into place once you find the structure.',
       'Pieces are rendered in graphite gradients, controlling depth, weight, and negative space entirely by hand. The same structure is pushed into a second tag, “JOSH”.',
     ],
     plates: [
+      { img: 'wildstyle-axiom-grey', caption: 'AXIOM — wildstyle', download: 'wildstyle-axiom.png' },
       { img: 'wildstyle-josh-grey', caption: 'JOSH — wildstyle' },
     ],
     specs: [
@@ -140,15 +154,15 @@ export const projects = [
 
   {
     slug: 'tentacle-arm', index: '05', title: 'Tentacle Arm',
-    tagline: 'A cable-driven arm — school physics project',
+    tagline: 'A string-driven arm — school physics project',
     discipline: 'industrial', disciplineLabel: 'Mechanical / 3D Print',
     kind: 'School physics project · 3D print', year: '2026',
     tools: ['Onshape', 'FDM printing'],
     heroType: '3d', hero: 'tentacle-desc1', heroFit: 'contain', featured: true, is3d: true,
-    blurb: 'A cable-driven articulated tentacle built for physics: segments that curl when the tendons pull.',
+    blurb: 'A string-driven articulated tentacle built for physics: segments that curl when the strings pull.',
     summary: [
-      'A cable-driven articulated tentacle arm, built as a school physics project to demonstrate tension, moments, and mechanical advantage. Stacked segments taper along the arm and thread onto a central carrier, so the whole assembly curls when the internal tendons are pulled.',
-      'It is a soft-robotics-style mechanism made entirely from rigid FDM parts and tension. Every vertebra and connector was modelled in Onshape to print without supports and assemble by hand — taken from a first prototype through three iterations to a working final arm.',
+      'A string-driven articulated tentacle arm, built as a school physics project to demonstrate tension, moments, and mechanical advantage. Stacked segments taper along the arm and thread onto a central carrier, so the whole assembly curls when the internal strings are pulled.',
+      'It is a soft-robotics-style mechanism made entirely from rigid FDM parts and string tension. Every vertebra and connector was modelled in Onshape to print without supports and assemble by hand — taken from a first prototype through three iterations to a working final arm.',
     ],
     descImages: [
       { img: 'tentacle-desc1', caption: 'Design — overview' },
@@ -164,10 +178,10 @@ export const projects = [
     download: 'tentacle-parts-print-ready.zip',
     prototypes: [
       { name: 'Prototype 1', download: 'tentacle-prototype-1.zip',
-        desc: 'The first proof of concept — a short stack of segments on a single tendon, testing whether pulling one cable would curl the arm at all.' },
+        desc: 'The first proof of concept — a short stack of segments on a single string, testing whether pulling one string would curl the arm at all.' },
       { name: 'Prototype 2', download: 'tentacle-prototype-2.zip',
         photo: 'tentacle-proto2photo', video: 'uploads/tentacle/prototype-2-mechanism.mp4', poster: 'uploads/tentacle/prototype-2-mechanism-poster.webp',
-        desc: 'Reworked segment geometry and a cleaner tendon routing. This is the stage where the mechanism actually held its curl — the clip shows it moving.' },
+        desc: 'Reworked segment geometry and a cleaner string routing. This is the stage where the mechanism actually held its curl — the clip shows it moving.' },
       { name: 'Prototype 3', download: 'tentacle-prototype-3.zip',
         desc: 'Tapered the segments along the length and tightened tolerances so the parts print without supports and slide together by hand.' },
       { name: 'Final — Tentacle arm project', download: 'tentacle-final.zip',
@@ -175,7 +189,7 @@ export const projects = [
     ],
     specs: [
       ['Project', 'School physics project'],
-      ['System', 'Cable / tendon driven'],
+      ['System', 'String driven'],
       ['Iterations', '3 prototypes → final'],
       ['Parts', '19 print-ready STL'],
       ['Modelled in', 'Onshape'],
@@ -218,21 +232,22 @@ export const projects = [
     discipline: 'brand', disciplineLabel: 'Student Council / Brand & Product',
     kind: 'Council design collection', year: '2025',
     tools: ['Procreate'],
-    heroType: 'image', hero: 'council-blazer', heroFit: 'cover', featured: false,
+    heroType: 'gallery', hero: 'council-blazer', heroFit: 'cover', galleryFit: 'contain', featured: false,
+    gallery: [
+      { img: 'council-blazer', title: 'Council Blazer', desc: 'The official SIS Student Council blazer — structured navy (#0A2142) with crimson piping on the lapel and cuffs, twin cuff stripes, padded shoulders, a name-plate, and the SIS crest at the chest.' },
+      { img: 'council-stamp', title: 'Council Stamp', desc: 'The Student Council stamp. Buy an item at a specific event and get your SIS passport stamped to claim a free discount.' },
+      { img: 'council-passport', title: 'SIS Passport', desc: 'The SIS passport. Get it stamped to claim a free discount after purchasing an item at a specific event.', download: 'council-passport.pdf' },
+      { img: 'council-prom', title: 'Prom Invitation Site', desc: 'A prom invitation website — every invited member receives it with their name shown, confirming they are invited to The Soirée ’26.', download: 'council-prom.pdf' },
+      { img: 'council-semester', title: 'Semester Break Story', desc: 'An Instagram story graphic marking the start of the semester break for the student body.' },
+      { img: 'council-kartini', title: 'Kartini Day Story', desc: 'A Kartini Day story graphic — celebrating the Indonesian day that honours R.A. Kartini and her role in women’s emancipation.' },
+    ],
     blurb: 'The official design set for the SIS Student Council — blazer, stamp, event stories, passport and prom invitations.',
     summary: [
       'A collection of official design work made for the SIS Student Council. The centrepiece is the council blazer: a structured navy body (#0A2142) with contrast crimson piping on the lapel and cuffs, twin cuff stripes, padded shoulders, a name-plate, and the SIS crest at the chest.',
       'Around the blazer sits the rest of the council identity: a council stamp, event stories (Semester Break, Kartini Day), a student passport, and prom invitations for The Soirée ’26.',
     ],
     links: [{ label: 'Prom invitations — live site (The Soirée ’26)', url: 'https://thesoiree26.my.canva.site/prom-test' }],
-    plates: [
-      { img: 'council-blazer',   caption: 'Council blazer design' },
-      { img: 'council-stamp',    caption: 'SIS Student Council stamp' },
-      { img: 'council-semester', caption: 'Semester Break story' },
-      { img: 'council-kartini',  caption: 'Kartini Day story' },
-      { img: 'council-passport', caption: 'SIS passport — PDF', download: 'council-passport.pdf' },
-      { img: 'council-prom',     caption: 'Prom invitations — PDF', download: 'council-prom.pdf' },
-    ],
+    plates: [],
     specs: [
       ['Set', 'Blazer · stamp · stories · passport · prom'],
       ['Navy', '#0A2142'],
@@ -247,16 +262,17 @@ export const projects = [
     discipline: 'brand', disciplineLabel: 'Illustration',
     kind: 'Digital illustration collection', year: '2024',
     tools: ['Procreate'],
-    heroType: 'image', hero: 'mandala', heroFit: 'contain', featured: false,
+    heroType: 'gallery', hero: 'mandala', heroFit: 'contain', galleryFit: 'contain', featured: false,
+    gallery: [
+      { img: 'mandala', title: 'Mandala', desc: 'A dense, symmetrical greyscale mandala — concentric rings of petals, paisley, and stippled negative space mirrored around a single centre, shaded with gradients so the whole piece reads as relief rather than flat pattern.' },
+      { img: 'drawing-blackcat', title: 'Black Cat', desc: 'A digital black-cat illustration, drawn by hand in Procreate.' },
+    ],
     blurb: 'A set of standalone digital illustrations, drawn by hand in Procreate.',
     summary: [
       'A growing set of standalone digital illustrations, all drawn by hand in Procreate — pieces made across the early years of secondary school.',
       'The mandala is a patience piece: a dense, symmetrical greyscale build — concentric rings of petals, paisley, and stippled negative space mirrored around a single centre and shaded with gradients so the whole thing reads as relief rather than flat pattern.',
     ],
-    plates: [
-      { img: 'mandala',         caption: 'Mandala — greyscale study' },
-      { img: 'drawing-blackcat',caption: 'Black cat' },
-    ],
+    plates: [],
     specs: [
       ['Medium', 'Digital (Procreate)'],
       ['Pieces', 'Mandala · Black cat'],
@@ -301,10 +317,11 @@ export const projects = [
     ],
     models: [
       { name: 'Assembled product', file: 'butterfly-product.stl' },
-      { name: 'Handle A (print-ready)', file: 'butterfly-printready-1.stl' },
-      { name: 'Handle B (print-ready)', file: 'butterfly-printready-2.stl' },
+      { name: 'Handle (part 1)', file: 'butterfly-printready-1.stl' },
+      { name: 'Spine (part 2)', file: 'butterfly-printready-2.stl' },
     ],
     download: 'butterfly-print-ready.zip',
+    downloadNote: 'To build one: print the Handle twice. The Handle is part 1, the Spine is part 2.',
     plates: [],
     specs: [
       ['Type', 'Balisong trainer (safe)'],
